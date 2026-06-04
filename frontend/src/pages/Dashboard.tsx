@@ -7,10 +7,10 @@ import PageIntroCard from "../components/PageIntroCard";
 import StatCard from "../components/StatCard";
 
 const overviewTags = [
-  { label: "比赛数据", icon: "grid" },
-  { label: "球队效率", icon: "bars" },
-  { label: "球员表现", icon: "user" },
-  { label: "投篮空间", icon: "target" },
+  { label: "比赛数据", icon: "grid", to: "/games" },
+  { label: "球队效率", icon: "bars", to: "/teams" },
+  { label: "球员表现", icon: "user", to: "/players" },
+  { label: "投篮空间", icon: "target", to: "/shots" },
 ] as const;
 
 const dashboardKpis = [

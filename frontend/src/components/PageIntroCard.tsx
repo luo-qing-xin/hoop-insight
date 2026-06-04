@@ -1,6 +1,9 @@
+import { Link } from "react-router-dom";
+
 type IntroTag = {
   label: string;
   icon: "grid" | "bars" | "user" | "target";
+  to?: string;
 };
 
 type PageIntroCardProps = {
@@ -81,10 +84,17 @@ export default function PageIntroCard({ title, body, tags }: PageIntroCardProps)
       </div>
       <div className="intro-tags" aria-label="页面数据范围">
         {tags.map((tag) => (
-          <span key={tag.label}>
-            <IntroIcon icon={tag.icon} />
-            {tag.label}
-          </span>
+          tag.to ? (
+            <Link key={tag.label} to={tag.to} aria-label={`前往${tag.label}`}>
+              <IntroIcon icon={tag.icon} />
+              {tag.label}
+            </Link>
+          ) : (
+            <span key={tag.label}>
+              <IntroIcon icon={tag.icon} />
+              {tag.label}
+            </span>
+          )
         ))}
       </div>
     </section>

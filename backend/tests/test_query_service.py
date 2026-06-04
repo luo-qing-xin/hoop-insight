@@ -157,7 +157,7 @@ def test_report_generation_falls_back_to_recent_games(monkeypatch):
     monkeypatch.setattr(
         query_service.game_service,
         "get_recent_games",
-        lambda season, days=7: SimpleNamespace(games=[focus_game]),
+        lambda season, days=14: SimpleNamespace(games=[focus_game]),
     )
     monkeypatch.setattr(
         query_service.game_service,

@@ -9,7 +9,7 @@ uvicorn app.main:app --reload
 ## 近期已完成比赛
 
 ```bash
-curl "http://127.0.0.1:8000/api/games/recent?season=2025-26&days=7"
+curl "http://127.0.0.1:8000/api/games/recent?season=2025-26&days=14"
 ```
 
 ## 今日赛程与实时比分

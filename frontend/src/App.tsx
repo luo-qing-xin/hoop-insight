@@ -13,9 +13,10 @@ function getPageCopy(pathname: string) {
 export default function App() {
   const location = useLocation();
   const page = getPageCopy(location.pathname);
+  const layoutClassName = location.pathname === "/data-center" ? "layout-data-center" : "";
 
   return (
-    <Layout title={page.title} description={page.description}>
+    <Layout title={page.title} description={page.description} className={layoutClassName}>
       <Outlet />
     </Layout>
   );

@@ -232,7 +232,7 @@ def _games_from_scoreboard(payload: dict[str, Any]) -> list[GameSummary]:
     return [game for game in summaries if game.game_id]
 
 
-def get_recent_games(season: str, days: int = 7) -> RecentGamesResponse:
+def get_recent_games(season: str, days: int = 14) -> RecentGamesResponse:
     """Return recently completed games from the league game log."""
 
     days = max(1, days)
@@ -336,7 +336,7 @@ def get_focus_games() -> FocusGamesResponse:
     season = _current_nba_season()
     today_games = get_today_games().games
     if not today_games:
-        today_games = get_recent_games(season, days=7).games
+        today_games = get_recent_games(season, days=14).games
 
     team_ids = {
         team.team_id

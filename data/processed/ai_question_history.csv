@@ -1,0 +1,2 @@
+﻿asked_at,question,intent,answer,need_data
+2026-06-04T14:37:25,最近三场比赛中，哪位球员得分表现最稳定？,recent_games_analysis,"数据不足 3 场，以下基于已有 2 场计算。最近 3 场比赛中，得分表现最稳定的是 Carter Bryant。他的得分序列为 [2.0, 2.0]，平均 2.0 分，标准差 0.0。标准差越小代表场与场之间波动越小，因此稳定性更好。","recent_games, box_scores"

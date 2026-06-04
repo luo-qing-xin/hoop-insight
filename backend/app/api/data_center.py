@@ -1,85 +1,114 @@
 from __future__ import annotations
 
-from datetime import datetime
-from pathlib import Path
-from typing import Any
-
-import pandas as pd
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 
-from app.utils.data_storage import DATA_ROOT, ensure_data_dirs, load_dataframe
+from app.utils.data_catalog import (
+    MAX_API_RECORDS,
+    PREVIEW_LIMIT,
+    build_schema_table,
+    catalog_overview,
+    dataframe_to_csv_text,
+    dataframe_to_records,
+    discover_dataset_summaries,
+    get_dataset_by_key,
+    get_dataframe_summary,
+    load_dataset,
+)
+from app.utils.data_storage import ensure_data_dirs
 
 
 router = APIRouter(prefix="/api/data-center", tags=["data-center"])
 
-DATASETS: dict[str, dict[str, str]] = {
-    "player_stats": {"label": "球员基础数据", "folder": "processed", "name": "player_stats"},
-    "player_advanced_stats": {"label": "球员高阶数据", "folder": "processed", "name": "player_advanced_stats"},
-    "team_stats": {"label": "球队基础数据", "folder": "processed", "name": "team_stats"},
-    "team_advanced_stats": {"label": "球队高阶数据", "folder": "processed", "name": "team_advanced_stats"},
-    "recent_games": {"label": "近期比赛数据", "folder": "processed", "name": "recent_games"},
-    "shot_chart": {"label": "投篮数据", "folder": "processed", "name": "shot_chart"},
-    "ai_question_history": {"label": "AI 问数历史数据", "folder": "processed", "name": "ai_question_history"},
-}
 
-
-def _dataset_path(dataset: dict[str, str]) -> Path:
-    return DATA_ROOT / dataset["folder"] / f"{dataset['name']}.csv"
-
-
-def _metadata(path: Path, df: pd.DataFrame) -> dict[str, Any]:
-    exists = path.exists()
-    stat = path.stat() if exists else None
-    return {
-        "rows": int(len(df)),
-        "columns": int(len(df.columns)),
-        "missing_values": int(df.isna().sum().sum()) if not df.empty else 0,
-        "updated_at": datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds") if stat else None,
-        "file_size": int(stat.st_size) if stat else 0,
-        "path": str(path),
-        "exists": exists,
-    }
-
-
-def _json_records(df: pd.DataFrame) -> list[dict[str, Any]]:
-    safe_df = df.astype(object).where(pd.notna(df), None)
-    return safe_df.to_dict(orient="records")
+def _download_filename(summary: dict[str, object]) -> str:
+    data_type = str(summary.get("data_type") or "")
+    if data_type == "比赛数据":
+        return "raw_games.csv"
+    if data_type == "球员数据":
+        return "raw_players.csv"
+    if data_type == "球队数据":
+        return "raw_teams.csv"
+    if data_type == "投篮数据":
+        return "raw_shots.csv"
+    if data_type == "AI 问答日志":
+        return "raw_ai_logs.csv"
+    name = str(summary.get("name") or "dataset").strip() or "dataset"
+    return f"raw_{name}.csv"
 
 
 @router.get("/datasets")
-def list_datasets() -> dict[str, Any]:
+def list_datasets() -> dict[str, object]:
     ensure_data_dirs()
-    datasets = []
-    for key, dataset in DATASETS.items():
-        path = _dataset_path(dataset)
-        datasets.append(
-            {
-                "key": key,
-                "label": dataset["label"],
-                "folder": dataset["folder"],
-                "name": dataset["name"],
-                "exists": path.exists(),
-                "updated_at": datetime.fromtimestamp(path.stat().st_mtime).isoformat(timespec="seconds") if path.exists() else None,
-            }
-        )
-    return {"datasets": datasets}
+    datasets = discover_dataset_summaries()
+    return {
+        "overview": catalog_overview(datasets),
+        "datasets": datasets,
+    }
 
 
 @router.get("/datasets/{dataset_key}")
-def get_dataset(dataset_key: str) -> dict[str, Any]:
+def get_dataset(dataset_key: str) -> dict[str, object]:
     ensure_data_dirs()
-    dataset = DATASETS.get(dataset_key)
-    if dataset is None:
-        raise HTTPException(status_code=404, detail="Unknown dataset")
+    try:
+        path, summary = get_dataset_by_key(dataset_key)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Unknown dataset") from exc
 
-    path = _dataset_path(dataset)
-    df = load_dataframe(dataset["name"], dataset["folder"])
-    metadata = _metadata(path, df)
+    if summary.get("status") == "读取失败":
+        return {
+            **summary,
+            "columns": [],
+            "records": [],
+            "preview_records": [],
+            "schema": [],
+            "metadata": summary,
+            "api_record_limit": MAX_API_RECORDS,
+        }
 
+    try:
+        dataframe, encoding = load_dataset(path)
+    except Exception as exc:  # noqa: BLE001 - return a readable error instead of a 500.
+        failed = {**summary, "status": "读取失败", "error": str(exc), "encoding": summary.get("encoding") or "无法识别"}
+        return {
+            **failed,
+            "columns": [],
+            "records": [],
+            "preview_records": [],
+            "schema": [],
+            "metadata": failed,
+            "api_record_limit": MAX_API_RECORDS,
+        }
+
+    metadata = get_dataframe_summary(dataframe, {**summary, "encoding": encoding})
+    records = dataframe_to_records(dataframe, MAX_API_RECORDS)
     return {
-        "key": dataset_key,
-        "label": dataset["label"],
-        "columns": list(df.columns),
-        "records": _json_records(df),
+        **metadata,
+        "columns": [str(column) for column in dataframe.columns],
+        "records": records,
+        "preview_records": dataframe_to_records(dataframe, PREVIEW_LIMIT),
+        "schema": build_schema_table(dataframe),
         "metadata": metadata,
+        "api_record_limit": MAX_API_RECORDS,
+        "is_truncated": len(dataframe) > MAX_API_RECORDS,
     }
+
+
+@router.get("/datasets/{dataset_key}/download")
+def download_dataset_csv(dataset_key: str) -> Response:
+    ensure_data_dirs()
+    try:
+        path, summary = get_dataset_by_key(dataset_key)
+        dataframe, _encoding = load_dataset(path)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Unknown dataset") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Dataset cannot be exported: {exc}") from exc
+
+    csv_text = dataframe_to_csv_text(dataframe)
+    filename = _download_filename(summary)
+    return Response(
+        content=f"\ufeff{csv_text}",
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
