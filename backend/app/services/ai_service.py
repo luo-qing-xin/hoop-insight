@@ -139,3 +139,71 @@ def answer_question(question: str, context_data: Any) -> str:
         },
     ]
     return chat(messages)
+
+
+def generate_qa_analysis_report(question: str, analysis_context: dict[str, Any]) -> str:
+    """Generate a long-form basketball analytics answer from computed context."""
+
+    system_prompt = (
+        "你是 Hoop Insight 的篮球数据分析师。你必须基于系统提供的数据上下文进行回答，"
+        "不能编造不存在的数据。你的回答要像一份小型球探/数据分析报告，必须包含结论、"
+        "数据依据、详细分析、对比与洞察、局限性和后续建议。回答要使用自然、专业、"
+        "有高级感的中文，不要只给一句结论。遇到数据不足时，要明确指出数据不足，"
+        "并说明还能基于现有数据得出什么有限结论。所有结论必须尽量绑定具体数据。"
+    )
+    user_prompt = (
+        "请基于以下已经由 pandas 计算过的确定性分析上下文回答用户问题。\n"
+        "输出必须使用 Markdown，并严格包含这些二级标题：\n"
+        "## 结论摘要\n"
+        "## 关键数据依据\n"
+        "## 详细分析\n"
+        "## 对比与洞察\n"
+        "## 局限性\n"
+        "## 后续建议\n\n"
+        "回答长度要求：普通问题不少于 500 个中文字符，复杂对比或综合分析不少于 800 个中文字符。"
+        "不要输出空泛套话，不要复述无关字段。\n\n"
+        f"用户原始问题：{question}\n"
+        f"分析上下文：\n```json\n{_json_for_prompt(analysis_context)}\n```"
+    )
+    return chat(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0.25,
+    )
+
+
+def generate_focus_game_report(question: str, report_context: dict[str, Any]) -> str:
+    """Generate a concrete focus-game report from structured game data."""
+
+    system_prompt = (
+        "你是 Hoop Insight 的篮球赛后分析师。你必须只基于传入的结构化比赛数据生成报告，"
+        "不得编造比分、球员姓名、命中率、关键时刻、伤病、轮休或战术细节。"
+        "如果字段缺失，必须明确说明缺少什么，并继续基于已有字段分析。"
+        "不要把意图识别、字段解释或方法论说明放在主体开头。输出中文 Markdown。"
+    )
+    user_prompt = (
+        f"用户原始问题：{question}\n"
+        "intent：focus_game_report\n\n"
+        "结构化比赛上下文如下：\n"
+        f"```json\n{_json_for_prompt(report_context)}\n```\n\n"
+        "请严格按以下结构输出，并确保每个结论绑定到传入数据：\n"
+        "## 昨日/今日/焦点比赛分析报告\n"
+        "## 1. 比赛概览\n"
+        "## 2. 关键结论\n"
+        "## 3. 比赛走势\n"
+        "## 4. 球员表现\n"
+        "## 5. 球队层面分析\n"
+        "## 6. 胜负原因\n"
+        "## 7. 局限性\n\n"
+        "要求：候选比赛列表、被选中的焦点比赛、box_scores 摘要、game_flow 摘要都只能来自上下文；"
+        "不得编造数据。局限性只保留简短说明。"
+    )
+    return chat(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0.2,
+    )

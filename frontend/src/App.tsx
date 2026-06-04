@@ -16,7 +16,7 @@ export default function App() {
   const layoutClassName = location.pathname === "/data-center" ? "layout-data-center" : "";
 
   return (
-    <Layout title={page.title} description={page.description} className={layoutClassName}>
+    <Layout title={page.title} eyebrow={page.eyebrow} description={page.description} className={layoutClassName}>
       <Outlet />
     </Layout>
   );

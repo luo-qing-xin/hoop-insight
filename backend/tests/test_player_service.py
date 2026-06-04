@@ -14,12 +14,12 @@ def _sample_player_stats() -> pd.DataFrame:
                 "TEAM_ABBREVIATION": "AAA",
                 "AGE": 27,
                 "GP": 20,
-                "MIN": 32.5,
-                "PTS": 25.1,
-                "REB": 4.2,
-                "AST": 7.1,
-                "STL": 1.1,
-                "BLK": 0.3,
+                "MIN": 650,
+                "PTS": 502,
+                "REB": 84,
+                "AST": 142,
+                "STL": 22,
+                "BLK": 6,
                 "FG_PCT": 0.48,
                 "FG3_PCT": 0.39,
                 "FT_PCT": 0.88,
@@ -32,12 +32,12 @@ def _sample_player_stats() -> pd.DataFrame:
                 "TEAM_ABBREVIATION": "BBB",
                 "AGE": 24,
                 "GP": 18,
-                "MIN": 28.0,
-                "PTS": 21.3,
-                "REB": 8.4,
-                "AST": 3.0,
-                "STL": 1.5,
-                "BLK": 0.7,
+                "MIN": 504,
+                "PTS": 383.4,
+                "REB": 151.2,
+                "AST": 54,
+                "STL": 27,
+                "BLK": 12.6,
                 "FG_PCT": 0.51,
                 "FG3_PCT": 0.35,
                 "FT_PCT": 0.8,
@@ -50,12 +50,12 @@ def _sample_player_stats() -> pd.DataFrame:
                 "TEAM_ABBREVIATION": "AAA",
                 "AGE": 21,
                 "GP": 30,
-                "MIN": 8.0,
-                "PTS": 30.0,
-                "REB": 2.0,
-                "AST": 1.0,
-                "STL": 0.2,
-                "BLK": 0.1,
+                "MIN": 240,
+                "PTS": 900,
+                "REB": 60,
+                "AST": 30,
+                "STL": 6,
+                "BLK": 3,
                 "FG_PCT": 0.4,
                 "FG3_PCT": 0.3,
                 "FT_PCT": 0.7,
@@ -109,12 +109,16 @@ def _sample_advanced_player_stats() -> pd.DataFrame:
 def test_get_player_leaderboard_sorts_and_filters(monkeypatch):
     monkeypatch.setattr(player_service.nba_client, "get_player_stats", lambda season, measure_type: _sample_player_stats())
 
-    response = player_service.get_player_leaderboard("2025-26", stat="PLUS_MINUS", min_gp=10, min_min=15)
+    response = player_service.get_player_leaderboard("2025-26", stat="PTS", min_gp=10, min_min=15)
 
-    assert response.stat == "PLUS_MINUS"
-    assert [player.player_name for player in response.players] == ["Alpha Wing", "Beta Guard"]
+    assert response.stat == "PTS"
+    assert [player.player_name for player in response.players] == ["Beta Guard", "Alpha Wing"]
     assert response.players[0].rank == 1
-    assert response.players[0].plus_minus == 7.2
+    assert response.players[0].ppg == 25.1
+    assert response.players[0].pts == 25.1
+    assert response.players[0].total_pts == 502
+    assert response.players[0].mpg == 32.5
+    assert response.players[0].total_min == 650
 
 
 def test_get_player_leaderboard_filters_by_team(monkeypatch):
@@ -125,6 +129,46 @@ def test_get_player_leaderboard_filters_by_team(monkeypatch):
     assert response.team_abbr == "AAA"
     assert [player.team_abbr for player in response.players] == ["AAA"]
     assert [player.player_name for player in response.players] == ["Beta Guard"]
+
+
+def test_get_player_leaderboard_derives_per_game_values_from_totals(monkeypatch):
+    monkeypatch.setattr(
+        player_service.nba_client,
+        "get_player_stats",
+        lambda season, measure_type: pd.DataFrame(
+            [
+                {
+                    "PLAYER_ID": 1629029,
+                    "PLAYER_NAME": "Luka Doncic",
+                    "TEAM_ID": 1610612747,
+                    "TEAM_ABBREVIATION": "LAL",
+                    "AGE": 27,
+                    "GP": 64,
+                    "MIN": 2288.6,
+                    "PTS": 2143,
+                    "REB": 495,
+                    "AST": 530,
+                    "STL": 105,
+                    "BLK": 34,
+                    "FG_PCT": 0.476,
+                    "FG3_PCT": 0.366,
+                    "FT_PCT": 0.78,
+                    "PLUS_MINUS": 187,
+                }
+            ]
+        ),
+    )
+
+    response = player_service.get_player_leaderboard("2025-26", stat="PTS", min_gp=0, min_min=0)
+
+    player = response.players[0]
+    assert player.ppg == 33.484
+    assert player.rpg == 7.734
+    assert player.apg == 8.281
+    assert player.mpg == 35.759
+    assert player.total_pts == 2143
+    assert player.total_reb == 495
+    assert player.total_ast == 530
 
 
 def test_get_player_leaderboard_rejects_unsupported_stat():

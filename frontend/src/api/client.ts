@@ -98,11 +98,21 @@ export type PlayerLeaderboardEntry = {
   team_abbr?: string | null;
   age?: number | null;
   gp?: number | null;
+  mpg?: number | null;
   min?: number | null;
+  total_min?: number | null;
+  ppg?: number | null;
   pts?: number | null;
+  total_pts?: number | null;
+  rpg?: number | null;
   reb?: number | null;
+  total_reb?: number | null;
+  apg?: number | null;
   ast?: number | null;
+  total_ast?: number | null;
+  spg?: number | null;
   stl?: number | null;
+  bpg?: number | null;
   blk?: number | null;
   fg_pct?: number | null;
   fg3_pct?: number | null;
@@ -295,6 +305,7 @@ export type AskAiResponse = {
   entities?: Record<string, unknown>;
   need_data?: string[];
   data?: unknown;
+  analysis?: unknown;
   [key: string]: unknown;
 };
 

@@ -54,6 +54,24 @@ function formatDateTime(value?: string | null) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString("zh-CN");
 }
 
+function formatKpiDateTime(value?: string | null) {
+  if (!value) {
+    return { date: "暂无数据", time: "", full: "暂无数据" };
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return { date: value, time: "", full: value };
+  }
+
+  return {
+    date: date.toLocaleDateString("zh-CN"),
+    time: date.toLocaleTimeString("zh-CN", { hour12: false }),
+    full: date.toLocaleString("zh-CN", { hour12: false }),
+  };
+}
+
 function statusClass(status?: string) {
   if (status === "读取失败") {
     return "data-status data-status-error";
@@ -504,21 +522,17 @@ export function Component() {
 
   const missingTypeText = overview?.missing_data_types.length ? overview.missing_data_types.join("、") : "无";
   const showStatus = datasetListState.loading || datasetState.loading || Boolean(datasetListState.error ?? datasetState.error);
+  const latestUpdatedAt = formatKpiDateTime(overview?.latest_updated_at);
 
   return (
     <div className="page-stack data-center-page">
-      <section className="data-center-intro">
-        <div className="data-center-title-block">
-          <span>Local Data Hub</span>
-          <h2>数据中心</h2>
-          <p>这里展示项目获取、缓存和处理后的原始篮球数据，包括数据来源、数据格式、字段结构、数据预览和下载入口。</p>
-        </div>
-        <div className="mode-row">
+      <section className="filter-card data-center-overview-card">
+        <DatasetPicker datasets={activeTab === "全部数据" ? datasets : visibleDatasets} datasetKey={datasetKey} onPick={(key) => { setDatasetKey(key); setKeyword(""); }} />
+        <div className="data-center-mode-panel" aria-label="数据中心当前状态">
           <span>当前模式：{overview?.data_mode ?? "无法识别"}</span>
           <span>{overview?.data_source ?? "当前数据来源：项目本地数据文件 / 已缓存数据 / 后端接口返回数据。"}</span>
           <span>格式：{overview?.formats.length ? overview.formats.join(" / ") : "暂无数据"}</span>
         </div>
-        <DatasetPicker datasets={activeTab === "全部数据" ? datasets : visibleDatasets} datasetKey={datasetKey} onPick={(key) => { setDatasetKey(key); setKeyword(""); }} />
       </section>
 
       <div className="stat-grid data-center-stat-grid">
@@ -526,7 +540,20 @@ export function Component() {
         <StatCard label="总行数" value={formatNumber(overview?.total_rows)} trend="所有可读数据汇总" tone="green" icon="pulse" />
         <StatCard label="总列数" value={formatNumber(overview?.total_columns)} trend="按数据表列数累计" tone="blue" />
         <StatCard label="已识别表" value={formatNumber(overview?.recognized_table_count)} trend={`缺失：${missingTypeText}`} icon="shield" />
-        <StatCard label="最近更新" value={formatDateTime(overview?.latest_updated_at)} trend="来自文件修改时间" tone="amber" icon="timer" />
+        <StatCard
+          label="最近更新"
+          value={
+            <span className="stat-date-time">
+              <span className="stat-date-time-date">{latestUpdatedAt.date}</span>
+              {latestUpdatedAt.time ? <span className="stat-date-time-clock">{latestUpdatedAt.time}</span> : null}
+            </span>
+          }
+          trend="来自文件修改时间"
+          tone="amber"
+          icon="timer"
+          className="data-center-updated-card"
+          valueTitle={latestUpdatedAt.full}
+        />
       </div>
 
       <section className="data-tabs" aria-label="数据类型">

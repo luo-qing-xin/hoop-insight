@@ -7,13 +7,14 @@ type DataTableProps = {
   title?: string;
   subtitle?: string;
   actionLabel?: string;
+  showMetricTooltips?: boolean;
 };
 
 function isCompleteStatus(column: string, value: string | number) {
   return column === "状态" && String(value).includes("已结束");
 }
 
-export default function DataTable({ columns, rows, title = "数据明细", subtitle = "来自后端接口的结构化数据。", actionLabel }: DataTableProps) {
+export default function DataTable({ columns, rows, title = "数据明细", subtitle = "来自后端接口的结构化数据。", actionLabel, showMetricTooltips = true }: DataTableProps) {
   return (
     <section className="table-card">
       <div className="card-heading">
@@ -32,7 +33,7 @@ export default function DataTable({ columns, rows, title = "数据明细", subti
           <thead>
             <tr>
               {columns.map((column) => {
-                const explanation = getMetricExplanation(column);
+                const explanation = showMetricTooltips ? getMetricExplanation(column) : null;
 
                 return (
                   <th key={column}>

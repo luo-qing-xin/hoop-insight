@@ -140,13 +140,49 @@ def test_recent_player_stability_uses_recent_box_scores(monkeypatch):
 
     result = query_service.ask_question("最近三场比赛中，哪位球员得分表现最稳定？")
 
-    assert result["intent"] == "recent_games_analysis"
+    assert result["intent"] == "player_stability"
     assert "Steady Guard" in result["answer"]
     assert "标准差" in result["answer"]
     assert result["debug"]["required_fields"] == []
 
 
-def test_report_generation_falls_back_to_recent_games(monkeypatch):
+def test_recent_games_query_returns_global_recent_three():
+    result = query_service.ask_question("最近三场比赛是哪些")
+
+    assert result["intent"] == "recent_games_query"
+    assert "最近 3 场比赛列表" in result["answer"]
+    assert "2026-06-03" in result["answer"]
+    assert result["analysis"]["sample_range"]["returned_games"] == 3
+    assert result["debug"]["required_fields"] == []
+
+
+def test_recent_games_query_extracts_window_five():
+    result = query_service.ask_question("最近5场比赛有哪些")
+
+    assert result["intent"] == "recent_games_query"
+    assert result["analysis"]["sample_range"]["returned_games"] == 5
+    assert "最近 5 场比赛列表" in result["answer"]
+
+
+def test_recent_games_query_can_filter_team():
+    result = query_service.ask_question("湖人队最近三场比赛是哪些")
+
+    assert result["intent"] == "recent_games_query"
+    assert result["analysis"]["computed_results"]["scope"] == "湖人"
+    assert result["analysis"]["sample_range"]["returned_games"] == 3
+    assert all(
+        "LAL" in {game["home_team"], game["away_team"]}
+        for game in result["analysis"]["computed_results"]["games"]
+    )
+
+
+def test_recent_games_query_does_not_override_player_performance_question():
+    classification = query_service.classify_question("詹姆斯最近三场比赛表现如何")
+
+    assert classification["intent"] != "recent_games_query"
+
+
+def test_focus_game_report_uses_focus_report_intent(monkeypatch):
     focus_game = SimpleNamespace(
         game_id="001",
         matchup="ALP @ BET",
@@ -165,9 +201,18 @@ def test_report_generation_falls_back_to_recent_games(monkeypatch):
         lambda game_id: SimpleNamespace(top_players=[{"player_name": "Alpha Guard", "points": 28, "rebounds": 5, "assists": 7}]),
     )
 
+    monkeypatch.setattr(query_service, "build_qa_analysis", lambda question, classification: None)
+
     result = query_service.ask_question("请生成一份今日焦点比赛分析报告。")
 
-    assert result["intent"] == "report_generation"
+    assert result["intent"] == "focus_game_report"
     assert "比赛概览" in result["answer"]
     assert "ALP @ BET" in result["answer"]
     assert result["debug"]["required_fields"] == []
+
+
+def test_classify_focus_game_report_has_priority():
+    result = query_service.classify_question("请生成一份昨日焦点比赛分析报告。")
+
+    assert result["intent"] == "focus_game_report"
+    assert result["need_data"] == ["recent_games", "box_scores", "game_flow"]
