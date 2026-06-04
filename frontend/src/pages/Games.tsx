@@ -113,7 +113,7 @@ export function Component() {
 
       <section className="stat-grid">
         <StatCard label="今日比赛" value={String(today.length)} trend={formatDate(todayGames.data?.game_date)} tone="blue" />
-        <StatCard label="近期比赛" value={String(recent.length)} trend="近 7 天" tone="violet" />
+        <StatCard label="近期比赛" value={String(recent.length)} trend="近 14 天" tone="violet" />
         <StatCard label="焦点对阵" value={String(focus.length)} trend="按信号排序" tone="green" />
         <StatCard label="可复盘比赛" value={String(recent.filter((game) => game.game_id).length)} trend="已关联比赛 ID" tone="amber" />
       </section>

@@ -6,11 +6,12 @@ type LayoutProps = {
   title: string;
   description: string;
   children: ReactNode;
+  className?: string;
 };
 
-export default function Layout({ title, description, children }: LayoutProps) {
+export default function Layout({ title, description, children, className = "" }: LayoutProps) {
   return (
-    <div className="app-shell">
+    <div className={`app-shell${className ? ` ${className}` : ""}`}>
       <Sidebar />
       <div className="main-shell">
         <header className="topbar">

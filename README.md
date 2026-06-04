@@ -2,6 +2,8 @@
 
 Hoop Insight 是一个面向课程展示和后续迭代的篮球数据分析系统。项目通过 FastAPI 提供比赛、球队、球员、投篮区域和智能问数接口，前端使用 React + TypeScript 构建数据分析工作台，帮助用户从结构化数据中快速获得比赛洞察。
 
+Mac 本地首次运行请优先查看：[README_MAC_RUN.md](README_MAC_RUN.md)。
+
 ## 技术栈
 
 - 后端：Python + FastAPI + pytest

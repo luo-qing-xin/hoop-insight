@@ -582,7 +582,7 @@ def _report_generation(season: str, debug: dict[str, Any]) -> dict[str, Any]:
     source = "today_games"
     selected_games = today_games
     if not selected_games:
-        selected_games = game_service.get_recent_games(season, days=7).games[:3]
+        selected_games = game_service.get_recent_games(season, days=14).games[:3]
         source = "recent_games"
     debug["data_tables"].append(f"{source}.games")
 

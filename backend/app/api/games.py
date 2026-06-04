@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api/games", tags=["games"])
 @router.get("/recent", response_model=RecentGamesResponse)
 def recent_games(
     season: str = Query(..., examples=["2025-26"]),
-    days: int = Query(default=7, ge=1, le=60),
+    days: int = Query(default=14, ge=1, le=60),
 ) -> RecentGamesResponse:
     return get_recent_games(season=season, days=days)
 

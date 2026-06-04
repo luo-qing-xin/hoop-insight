@@ -301,24 +301,79 @@ export type AskAiResponse = {
 export type DataCenterDatasetSummary = {
   key: string;
   label: string;
-  folder: string;
   name: string;
-  exists: boolean;
+  data_type: string;
+  source: string;
+  source_path: string;
+  data_format: string;
+  file_size: number;
+  rows?: number | null;
+  columns?: number | null;
   updated_at?: string | null;
+  encoding?: string | null;
+  status: string;
+  error?: string | null;
+  exists: boolean;
+};
+
+export type DataCenterOverview = {
+  data_mode: string;
+  data_source: string;
+  data_file_count: number;
+  total_rows: number;
+  total_columns: number;
+  recognized_table_count: number;
+  latest_updated_at?: string | null;
+  format_count: number;
+  formats: string[];
+  data_types: string[];
+  missing_data_types: string[];
+  scanned_directories: string[];
+};
+
+export type DataCenterSchemaField = {
+  field_name: string;
+  dtype: string;
+  non_null_count: number;
+  missing_count: number;
+  missing_rate: number;
+  sample_value: string;
+  zh_explanation: string;
 };
 
 export type DataCenterDataset = {
   key: string;
   label: string;
+  name: string;
+  data_type: string;
+  source: string;
+  source_path: string;
+  data_format: string;
+  file_size: number;
+  rows?: number | null;
+  updated_at?: string | null;
+  encoding?: string | null;
+  status: string;
+  error?: string | null;
   columns: string[];
   records: Array<Record<string, unknown>>;
+  preview_records: Array<Record<string, unknown>>;
+  schema: DataCenterSchemaField[];
+  api_record_limit: number;
+  is_truncated?: boolean;
   metadata: {
     rows: number;
     columns: number;
     missing_values: number;
+    duplicate_rows: number;
     updated_at?: string | null;
     file_size: number;
-    path: string;
+    source_path: string;
+    data_format: string;
+    data_type: string;
+    encoding?: string | null;
+    status: string;
+    error?: string | null;
     exists: boolean;
   };
 };
@@ -414,7 +469,7 @@ export function useApi<T>(loader: () => Promise<T>, deps: DependencyList): ApiSt
 }
 
 export function getRecentGames(params?: { season?: string; days?: number }) {
-  return request<RecentGamesResponse>("/api/games/recent", {}, withDefaults({ days: 7, ...params }));
+  return request<RecentGamesResponse>("/api/games/recent", {}, withDefaults({ days: 14, ...params }));
 }
 
 export function getTodayGames() {
@@ -481,9 +536,13 @@ export function askAI(question: string) {
 }
 
 export function getDataCenterDatasets() {
-  return request<{ datasets: DataCenterDatasetSummary[] }>("/api/data-center/datasets");
+  return request<{ overview: DataCenterOverview; datasets: DataCenterDatasetSummary[] }>("/api/data-center/datasets");
 }
 
 export function getDataCenterDataset(datasetKey: string) {
   return request<DataCenterDataset>(`/api/data-center/datasets/${encodeURIComponent(datasetKey)}`);
+}
+
+export function getDataCenterDownloadUrl(datasetKey: string) {
+  return buildUrl(`/api/data-center/datasets/${encodeURIComponent(datasetKey)}/download`);
 }

@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   getDataCenterDataset,
   getDataCenterDatasets,
+  getDataCenterDownloadUrl,
   useApi,
   type DataCenterDataset,
   type DataCenterDatasetSummary,
@@ -9,34 +10,20 @@ import {
 import { AsyncStatus } from "../components/AsyncState";
 import StatCard from "../components/StatCard";
 
-type SortConfig = {
-  column: string;
-  direction: "asc" | "desc";
-} | null;
-
-type ChartPoint = {
-  label: string;
-  value: number;
-};
-
-type ChartBlock = {
-  title: string;
-  subtitle: string;
-  data: ChartPoint[];
-  lowerIsBetter?: boolean;
-};
-
-const DEFAULT_DATASETS: DataCenterDatasetSummary[] = [
-  { key: "player_stats", label: "球员基础数据", folder: "processed", name: "player_stats", exists: false },
-  { key: "team_stats", label: "球队基础数据", folder: "processed", name: "team_stats", exists: false },
-  { key: "recent_games", label: "近期比赛数据", folder: "processed", name: "recent_games", exists: false },
-  { key: "shot_chart", label: "投篮数据", folder: "processed", name: "shot_chart", exists: false },
-  { key: "ai_question_history", label: "AI 问数历史数据", folder: "processed", name: "ai_question_history", exists: false },
+const DATA_TABS = [
+  { key: "全部数据", label: "全部数据" },
+  { key: "比赛数据", label: "比赛数据" },
+  { key: "球员数据", label: "球员数据" },
+  { key: "球队数据", label: "球队数据" },
+  { key: "投篮数据", label: "投篮数据" },
+  { key: "AI 问答日志", label: "AI 日志" },
+  { key: "其他数据", label: "其他数据" },
 ];
 
-const TEAM_COLUMNS = ["team", "team_name", "team_abbr", "TEAM_NAME", "TEAM_ABBREVIATION", "TEAM_ABBR"];
-const PLAYER_COLUMNS = ["player", "player_name", "PLAYER_NAME"];
-const DATE_COLUMNS = ["date", "game_date", "GAME_DATE", "asked_at"];
+const SOURCE_PAGE_SIZE = 8;
+const PREVIEW_ROW_LIMIT = 10;
+
+type DetailTab = "summary" | "schema" | "preview" | "download";
 
 function valueToString(value: unknown) {
   if (value === null || value === undefined) {
@@ -45,37 +32,13 @@ function valueToString(value: unknown) {
   return String(value);
 }
 
-function valueToNumber(value: unknown) {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : null;
-  }
-  const parsed = Number(String(value ?? "").replace(/,/g, ""));
-  return Number.isFinite(parsed) ? parsed : null;
+function formatNumber(value?: number | null) {
+  return typeof value === "number" && Number.isFinite(value) ? value.toLocaleString() : "暂无数据";
 }
 
-function findColumn(columns: string[], aliases: string[]) {
-  const normalized = new Map(columns.map((column) => [column.toLowerCase(), column]));
-  for (const alias of aliases) {
-    const matched = normalized.get(alias.toLowerCase());
-    if (matched) {
-      return matched;
-    }
-  }
-  return null;
-}
-
-function uniqueValues(records: Array<Record<string, unknown>>, column: string | null) {
-  if (!column) {
-    return [];
-  }
-  return Array.from(new Set(records.map((row) => valueToString(row[column])).filter(Boolean))).sort((a, b) =>
-    a.localeCompare(b, "zh-CN"),
-  );
-}
-
-function formatFileSize(bytes: number) {
+function formatFileSize(bytes?: number | null) {
   if (!bytes) {
-    return "0 KB";
+    return "暂无数据";
   }
   if (bytes < 1024 * 1024) {
     return `${(bytes / 1024).toFixed(1)} KB`;
@@ -85,416 +48,356 @@ function formatFileSize(bytes: number) {
 
 function formatDateTime(value?: string | null) {
   if (!value) {
-    return "暂无";
+    return "暂无数据";
   }
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString("zh-CN");
 }
 
-function compareValues(a: unknown, b: unknown) {
-  const leftNumber = valueToNumber(a);
-  const rightNumber = valueToNumber(b);
-  if (leftNumber !== null && rightNumber !== null) {
-    return leftNumber - rightNumber;
+function statusClass(status?: string) {
+  if (status === "读取失败") {
+    return "data-status data-status-error";
   }
-  return valueToString(a).localeCompare(valueToString(b), "zh-CN", { numeric: true });
-}
-
-function escapeCsvCell(value: unknown) {
-  const text = valueToString(value);
-  if (/[",\n\r]/.test(text)) {
-    return `"${text.replace(/"/g, '""')}"`;
+  if (status === "空文件") {
+    return "data-status data-status-muted";
   }
-  return text;
+  return "data-status";
 }
 
-function downloadCsv(label: string, columns: string[], records: Array<Record<string, unknown>>) {
-  const csv = [columns.join(","), ...records.map((row) => columns.map((column) => escapeCsvCell(row[column])).join(","))].join("\n");
-  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${label || "dataset"}_filtered.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
+function isDatasetAvailable(dataset?: DataCenterDataset | null) {
+  return Boolean(dataset && dataset.status !== "读取失败" && dataset.metadata.exists);
 }
 
-function topMetricBlock(
-  title: string,
-  subtitle: string,
-  records: Array<Record<string, unknown>>,
-  columns: string[],
-  metricAliases: string[],
-  labelAliases: string[],
-  lowerIsBetter = false,
-): ChartBlock | null {
-  const metricColumn = findColumn(columns, metricAliases);
-  const labelColumn = findColumn(columns, labelAliases);
-  if (!metricColumn || !labelColumn) {
-    return null;
-  }
-
-  const data = records
-    .map((row) => ({ label: valueToString(row[labelColumn]), value: valueToNumber(row[metricColumn]) }))
-    .filter((item): item is ChartPoint => Boolean(item.label) && item.value !== null)
-    .sort((a, b) => (lowerIsBetter ? a.value - b.value : b.value - a.value))
-    .slice(0, 10);
-
-  return data.length ? { title, subtitle, data, lowerIsBetter } : null;
-}
-
-function buildPlayerCharts(dataset: DataCenterDataset): ChartBlock[] {
-  return [
-    topMetricBlock("得分 Top 10", "按得分字段自动识别生成", dataset.records, dataset.columns, ["pts", "PTS", "points"], PLAYER_COLUMNS),
-    topMetricBlock("篮板 Top 10", "按篮板字段自动识别生成", dataset.records, dataset.columns, ["reb", "REB", "rebounds"], PLAYER_COLUMNS),
-    topMetricBlock("助攻 Top 10", "按助攻字段自动识别生成", dataset.records, dataset.columns, ["ast", "AST", "assists"], PLAYER_COLUMNS),
-  ].filter((block): block is ChartBlock => block !== null);
-}
-
-function buildTeamCharts(dataset: DataCenterDataset): ChartBlock[] {
-  return [
-    topMetricBlock(
-      "进攻效率 Top 10",
-      "OFF_RATING / offensive_rating",
-      dataset.records,
-      dataset.columns,
-      ["OFF_RATING", "off_rating", "offensive_rating"],
-      TEAM_COLUMNS,
-    ),
-    topMetricBlock(
-      "防守效率 Top 10",
-      "数值越低通常越好",
-      dataset.records,
-      dataset.columns,
-      ["DEF_RATING", "def_rating", "defensive_rating"],
-      TEAM_COLUMNS,
-      true,
-    ),
-    topMetricBlock(
-      "净效率 Top 10",
-      "NET_RATING / net_rating",
-      dataset.records,
-      dataset.columns,
-      ["NET_RATING", "net_rating"],
-      TEAM_COLUMNS,
-    ),
-  ].filter((block): block is ChartBlock => block !== null);
-}
-
-function buildGameTrend(dataset: DataCenterDataset): ChartBlock | null {
-  const dateColumn = findColumn(dataset.columns, DATE_COLUMNS);
-  if (!dateColumn) {
-    return null;
-  }
-
-  const counts = new Map<string, number>();
-  dataset.records.forEach((row) => {
-    const raw = valueToString(row[dateColumn]);
-    if (!raw) {
-      return;
-    }
-    const key = raw.slice(0, 10);
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  });
-
-  const data = Array.from(counts.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .slice(-14)
-    .map(([label, value]) => ({ label, value }));
-
-  return data.length ? { title: "比赛日期趋势", subtitle: "按日期统计已保存比赛记录数", data } : null;
-}
-
-function buildAutoCharts(dataset: DataCenterDataset): ChartBlock[] {
-  if (dataset.key.includes("player")) {
-    return buildPlayerCharts(dataset);
-  }
-  if (dataset.key.includes("team")) {
-    return buildTeamCharts(dataset);
-  }
-  if (dataset.key.includes("recent_games")) {
-    return [buildGameTrend(dataset)].filter((block): block is ChartBlock => block !== null);
-  }
-  return [];
-}
-
-function MiniBarChart({ block }: { block: ChartBlock }) {
-  const max = Math.max(...block.data.map((item) => Math.abs(item.value)), 1);
+function MetaGrid({ dataset }: { dataset: DataCenterDataset }) {
+  const items = [
+    ["数据名称", dataset.label],
+    ["数据来源", dataset.source],
+    ["数据格式", dataset.data_format],
+    ["数据路径", dataset.source_path],
+    ["总行数", formatNumber(dataset.metadata.rows)],
+    ["总列数", formatNumber(dataset.metadata.columns)],
+    ["缺失值数量", formatNumber(dataset.metadata.missing_values)],
+    ["重复行数量", formatNumber(dataset.metadata.duplicate_rows)],
+    ["最近更新时间", formatDateTime(dataset.metadata.updated_at)],
+  ];
 
   return (
-    <section className="data-viz-card">
+    <div className="data-meta-grid">
+      {items.map(([label, value]) => (
+        <div className="data-meta-item" key={label}>
+          <span>{label}</span>
+          <strong>{value}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DatasetPicker({
+  datasets,
+  datasetKey,
+  onPick,
+}: {
+  datasets: DataCenterDatasetSummary[];
+  datasetKey: string;
+  onPick: (key: string) => void;
+}) {
+  return (
+    <label className="data-picker">
+      <span>当前数据表</span>
+      <select value={datasetKey} onChange={(event) => onPick(event.target.value)}>
+        {datasets.map((item) => (
+          <option key={item.key} value={item.key}>
+            {item.label} · {item.data_type} · {item.data_format}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function SourceTable({
+  datasets,
+  selectedKey,
+  onPick,
+}: {
+  datasets: DataCenterDatasetSummary[];
+  selectedKey: string;
+  onPick: (key: string) => void;
+}) {
+  const [page, setPage] = useState(1);
+  const pageCount = Math.max(1, Math.ceil(datasets.length / SOURCE_PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const pageStart = (safePage - 1) * SOURCE_PAGE_SIZE;
+  const visibleRows = datasets.slice(pageStart, pageStart + SOURCE_PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [datasets]);
+
+  useEffect(() => {
+    if (page > pageCount) {
+      setPage(pageCount);
+    }
+  }, [page, pageCount]);
+
+  return (
+    <section className="table-card data-center-table-card data-source-panel">
       <div className="card-heading">
         <div>
-          <h2>{block.title}</h2>
-          <p>{block.subtitle}</p>
+          <h2>数据来源与格式</h2>
+          <p>核心来源列表分页展示，完整路径、字段结构和原始预览在右侧详情中查看。</p>
         </div>
+        <span>{datasets.length ? `${datasets.length} 个对象` : "暂无数据"}</span>
       </div>
-      <div className="data-center-bars">
-        {block.data.map((item) => (
-          <div className="data-center-bar-row" key={`${item.label}-${item.value}`}>
-            <span>{item.label}</span>
-            <div className="data-center-bar-track">
-              <i
-                className={item.value < 0 ? "negative" : undefined}
-                style={{ width: `${Math.max((Math.abs(item.value) / max) * 100, 5)}%` }}
-              />
-            </div>
-            <strong>{Number.isInteger(item.value) ? item.value : item.value.toFixed(2)}</strong>
-          </div>
-        ))}
+      <div className="table-wrap">
+        <table className="data-source-table">
+          <thead>
+            <tr>
+              <th>数据名称</th>
+              <th>数据类型</th>
+              <th>数据格式</th>
+              <th>文件大小</th>
+              <th>行数</th>
+              <th>列数</th>
+              <th>当前状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleRows.length ? (
+              visibleRows.map((item) => (
+                <tr
+                  key={item.key}
+                  className={item.key === selectedKey ? "selected-row" : undefined}
+                  onClick={() => onPick(item.key)}
+                >
+                  <td>
+                    <button className="link-button" type="button" onClick={() => onPick(item.key)}>
+                      {item.label}
+                    </button>
+                  </td>
+                  <td>{item.data_type}</td>
+                  <td>{item.data_format}</td>
+                  <td>{formatFileSize(item.file_size)}</td>
+                  <td>{formatNumber(item.rows)}</td>
+                  <td>{formatNumber(item.columns)}</td>
+                  <td>
+                    <span className={statusClass(item.status)}>{item.status || "无法识别"}</span>
+                  </td>
+                  <td>
+                    <button
+                      className="ghost-button compact-action"
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onPick(item.key);
+                      }}
+                    >
+                      查看详情
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={8}>当前项目暂未检测到原始数据文件。</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="table-pagination">
+        <span>
+          第 {safePage} / {pageCount} 页 · 每页 {SOURCE_PAGE_SIZE} 条
+        </span>
+        <div>
+          <button type="button" disabled={safePage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>
+            上一页
+          </button>
+          <button type="button" disabled={safePage >= pageCount} onClick={() => setPage((current) => Math.min(pageCount, current + 1))}>
+            下一页
+          </button>
+        </div>
       </div>
     </section>
   );
 }
 
-function ScoreComparison({ dataset }: { dataset: DataCenterDataset }) {
-  const homeScore = findColumn(dataset.columns, ["home_score"]);
-  const awayScore = findColumn(dataset.columns, ["away_score"]);
-  if (!homeScore || !awayScore || !dataset.key.includes("recent_games")) {
-    return null;
-  }
+function DatasetDetailPanel({
+  dataset,
+  allDatasets,
+  keyword,
+  rows,
+  matchedRows,
+  onKeywordChange,
+}: {
+  dataset?: DataCenterDataset | null;
+  allDatasets: DataCenterDatasetSummary[];
+  keyword: string;
+  rows: Array<Record<string, unknown>>;
+  matchedRows: number;
+  onKeywordChange: (value: string) => void;
+}) {
+  const [detailTab, setDetailTab] = useState<DetailTab>("summary");
+  const downloadable = allDatasets.filter((item) => item.status !== "读取失败" && (item.rows ?? 0) > 0);
 
-  const homeTeam = findColumn(dataset.columns, ["home_team", "home_team_name"]);
-  const awayTeam = findColumn(dataset.columns, ["away_team", "away_team_name"]);
-  const gameId = findColumn(dataset.columns, ["game_id", "GAME_ID"]);
-  const rows = dataset.records.slice(0, 12);
+  useEffect(() => {
+    setDetailTab("summary");
+  }, [dataset?.key]);
 
-  return (
-    <section className="data-viz-card">
-      <div className="card-heading">
-        <div>
-          <h2>主客队比分对比</h2>
-          <p>展示最近保存的比赛比分记录</p>
-        </div>
-      </div>
-      <div className="score-compare-list">
-        {rows.map((row, index) => (
-          <div className="score-compare-row" key={`${valueToString(row[gameId ?? ""])}-${index}`}>
-            <span>{valueToString(row[awayTeam ?? ""]) || "客队"}</span>
-            <strong>{valueToString(row[awayScore])}</strong>
-            <em>:</em>
-            <strong>{valueToString(row[homeScore])}</strong>
-            <span>{valueToString(row[homeTeam ?? ""]) || "主队"}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-export function Component() {
-  const [datasetKey, setDatasetKey] = useState("player_stats");
-  const [keyword, setKeyword] = useState("");
-  const [team, setTeam] = useState("");
-  const [player, setPlayer] = useState("");
-  const [dateStart, setDateStart] = useState("");
-  const [dateEnd, setDateEnd] = useState("");
-  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
-
-  const datasetListState = useApi(getDataCenterDatasets, []);
-  const datasets = datasetListState.data?.datasets.length ? datasetListState.data.datasets : DEFAULT_DATASETS;
-  const datasetState = useApi(() => getDataCenterDataset(datasetKey), [datasetKey]);
-  const dataset = datasetState.data;
-
-  const teamColumn = dataset ? findColumn(dataset.columns, TEAM_COLUMNS) : null;
-  const playerColumn = dataset ? findColumn(dataset.columns, PLAYER_COLUMNS) : null;
-  const dateColumn = dataset ? findColumn(dataset.columns, DATE_COLUMNS) : null;
-
-  const teams = useMemo(() => uniqueValues(dataset?.records ?? [], teamColumn), [dataset, teamColumn]);
-  const players = useMemo(() => uniqueValues(dataset?.records ?? [], playerColumn), [dataset, playerColumn]);
-
-  const filteredRecords = useMemo(() => {
-    const records = dataset?.records ?? [];
-    const normalizedKeyword = keyword.trim().toLowerCase();
-    const start = dateStart ? new Date(dateStart) : null;
-    const end = dateEnd ? new Date(dateEnd) : null;
-
-    const filtered = records.filter((row) => {
-      if (normalizedKeyword) {
-        const haystack = Object.values(row).map(valueToString).join(" ").toLowerCase();
-        if (!haystack.includes(normalizedKeyword)) {
-          return false;
-        }
-      }
-      if (team && teamColumn && valueToString(row[teamColumn]) !== team) {
-        return false;
-      }
-      if (player && playerColumn && valueToString(row[playerColumn]) !== player) {
-        return false;
-      }
-      if ((start || end) && dateColumn) {
-        const dateValue = new Date(valueToString(row[dateColumn]));
-        if (Number.isNaN(dateValue.getTime())) {
-          return false;
-        }
-        if (start && dateValue < start) {
-          return false;
-        }
-        if (end) {
-          const inclusiveEnd = new Date(end);
-          inclusiveEnd.setHours(23, 59, 59, 999);
-          if (dateValue > inclusiveEnd) {
-            return false;
-          }
-        }
-      }
-      return true;
-    });
-
-    if (!sortConfig) {
-      return filtered;
-    }
-
-    return [...filtered].sort((left, right) => {
-      const result = compareValues(left[sortConfig.column], right[sortConfig.column]);
-      return sortConfig.direction === "asc" ? result : -result;
-    });
-  }, [dataset, keyword, team, teamColumn, player, playerColumn, dateColumn, dateStart, dateEnd, sortConfig]);
-
-  const visibleRecords = filteredRecords.slice(0, 500);
-  const chartBlocks = dataset ? buildAutoCharts(dataset) : [];
-
-  function updateSort(column: string) {
-    setSortConfig((current) => {
-      if (!current || current.column !== column) {
-        return { column, direction: "asc" };
-      }
-      if (current.direction === "asc") {
-        return { column, direction: "desc" };
-      }
-      return null;
-    });
-  }
-
-  return (
-    <div className="page-stack data-center-page">
-      <section className="data-center-intro">
-        <div>
-          <span>Local Data Hub</span>
-          <h2>数据中心</h2>
-          <p>这里用于查看、筛选、下载项目中已经持久化保存的数据。</p>
-        </div>
-        <label>
-          <span>数据集</span>
-          <select
-            value={datasetKey}
-            onChange={(event) => {
-              setDatasetKey(event.target.value);
-              setKeyword("");
-              setTeam("");
-              setPlayer("");
-              setDateStart("");
-              setDateEnd("");
-              setSortConfig(null);
-            }}
-          >
-            {datasets.map((item) => (
-              <option key={item.key} value={item.key}>
-                {item.label}
-                {item.exists ? "" : "（未保存）"}
-              </option>
-            ))}
-          </select>
-        </label>
+  if (!dataset) {
+    return (
+      <section className="table-card data-center-detail-panel">
+        <div className="empty-panel">请选择左侧数据对象查看字段结构、原始数据预览和下载入口。</div>
       </section>
+    );
+  }
 
-      <AsyncStatus loading={datasetState.loading} error={datasetState.error ?? datasetListState.error} />
-
-      {dataset && !dataset.metadata.exists ? (
-        <section className="state-card">当前数据还没有保存，请先运行数据获取模块。</section>
-      ) : null}
-
-      {dataset && dataset.metadata.exists ? (
-        <>
-          <div className="stat-grid data-center-stat-grid">
-            <StatCard label="总行数" value={dataset.metadata.rows.toLocaleString()} trend={`${filteredRecords.length} 条匹配`} />
-            <StatCard label="总列数" value={dataset.metadata.columns.toLocaleString()} trend="字段数" />
-            <StatCard label="缺失值" value={dataset.metadata.missing_values.toLocaleString()} trend="NA / 空值" tone="amber" />
-            <StatCard label="文件大小" value={formatFileSize(dataset.metadata.file_size)} trend={formatDateTime(dataset.metadata.updated_at)} tone="green" />
+  if (dataset.status === "读取失败") {
+    return (
+      <section className="table-card data-center-detail-panel">
+        <div className="card-heading">
+          <div>
+            <h2>{dataset.label}</h2>
+            <p>{dataset.source_path}</p>
           </div>
+          <span className={statusClass(dataset.status)}>{dataset.status}</span>
+        </div>
+        <div className="state-card state-card-error">该数据文件读取失败：{dataset.error || "无法识别具体原因。"}</div>
+      </section>
+    );
+  }
 
-          <section className="data-center-controls">
-            <label>
-              <span>关键词搜索</span>
-              <input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="搜索任意字段" />
-            </label>
-            {teamColumn ? (
-              <label>
-                <span>球队筛选</span>
-                <select value={team} onChange={(event) => setTeam(event.target.value)}>
-                  <option value="">全部球队</option>
-                  {teams.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-            {playerColumn ? (
-              <label>
-                <span>球员筛选</span>
-                <select value={player} onChange={(event) => setPlayer(event.target.value)}>
-                  <option value="">全部球员</option>
-                  {players.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-            {dateColumn ? (
-              <>
-                <label>
-                  <span>开始日期</span>
-                  <input type="date" value={dateStart} onChange={(event) => setDateStart(event.target.value)} />
-                </label>
-                <label>
-                  <span>结束日期</span>
-                  <input type="date" value={dateEnd} onChange={(event) => setDateEnd(event.target.value)} />
-                </label>
-              </>
-            ) : null}
-            <button className="primary-button" type="button" onClick={() => downloadCsv(dataset.label, dataset.columns, filteredRecords)}>
-              下载当前数据
-            </button>
-          </section>
+  const isAvailable = isDatasetAvailable(dataset);
+  const visiblePreviewRows = rows.slice(0, PREVIEW_ROW_LIMIT);
 
-          <section className="data-center-viz-grid">
-            {chartBlocks.length ? chartBlocks.map((block) => <MiniBarChart key={block.title} block={block} />) : <section className="state-card">当前数据字段暂不支持自动图表生成</section>}
-            <ScoreComparison dataset={dataset} />
-          </section>
+  return (
+    <section className="table-card data-center-detail-panel">
+      <div className="data-detail-heading">
+        <div>
+          <span>Selected Dataset</span>
+          <h2>{dataset.label}</h2>
+          <p>{dataset.source_path}</p>
+        </div>
+        {isAvailable ? (
+          <a className="ghost-button compact-action" href={getDataCenterDownloadUrl(dataset.key)}>
+            下载 CSV
+          </a>
+        ) : (
+          <span className={statusClass(dataset.status)}>{dataset.status || "暂无数据"}</span>
+        )}
+      </div>
 
-          <section className="table-card data-center-table-card">
-            <div className="card-heading">
+      <div className="data-detail-tabs" aria-label="数据详情">
+        {[
+          { key: "summary", label: "摘要" },
+          { key: "schema", label: "字段结构" },
+          { key: "preview", label: "原始预览" },
+          { key: "download", label: "下载" },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            className={detailTab === tab.key ? "active" : undefined}
+            onClick={() => setDetailTab(tab.key as DetailTab)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="data-detail-body">
+        {detailTab === "summary" ? (
+          <>
+            <MetaGrid dataset={dataset} />
+            <div className="data-detail-summary">
               <div>
-                <h2>{dataset.label}</h2>
-                <p>
-                  共 {dataset.metadata.rows.toLocaleString()} 行，当前筛选 {filteredRecords.length.toLocaleString()} 行。
-                  {filteredRecords.length > 500 ? " 表格仅展示前 500 行。" : ""}
-                </p>
+                <span>读取状态</span>
+                <strong>{dataset.status || "无法识别"}</strong>
               </div>
-              <span>最近更新时间：{formatDateTime(dataset.metadata.updated_at)}</span>
+              <div>
+                <span>编码方式</span>
+                <strong>{dataset.encoding || "无法识别"}</strong>
+              </div>
+              <div>
+                <span>字段数量</span>
+                <strong>{formatNumber(dataset.schema.length)}</strong>
+              </div>
+              <div>
+                <span>页面预览</span>
+                <strong>{dataset.is_truncated ? `${dataset.api_record_limit.toLocaleString()} 行内搜索` : "完整载入"}</strong>
+              </div>
             </div>
-            <div className="table-wrap">
-              <table>
+          </>
+        ) : null}
+
+        {detailTab === "schema" ? (
+          <div className="table-wrap data-detail-table-wrap">
+            <table className="schema-table">
+              <thead>
+                <tr>
+                  <th>字段名</th>
+                  <th>数据类型 dtype</th>
+                  <th>非空数量</th>
+                  <th>缺失值数量</th>
+                  <th>缺失率</th>
+                  <th>示例值</th>
+                  <th>中文解释</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dataset.schema.length ? (
+                  dataset.schema.map((field) => (
+                    <tr key={field.field_name}>
+                      <td>{field.field_name}</td>
+                      <td>{field.dtype}</td>
+                      <td>{formatNumber(field.non_null_count)}</td>
+                      <td>{formatNumber(field.missing_count)}</td>
+                      <td>{field.missing_rate.toFixed(2)}%</td>
+                      <td>{field.sample_value || "暂无"}</td>
+                      <td>{field.zh_explanation}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7}>当前数据表暂无字段结构。</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+
+        {detailTab === "preview" ? (
+          <div className="data-preview-panel">
+            <div className="data-preview-toolbar">
+              <label>
+                <span>关键词搜索</span>
+                <input value={keyword} onChange={(event) => onKeywordChange(event.target.value)} placeholder="搜索字段名或数据内容" />
+              </label>
+              <div className="match-count">
+                <span>匹配行数</span>
+                <strong>{matchedRows.toLocaleString()}</strong>
+              </div>
+            </div>
+            <div className="table-wrap data-detail-table-wrap">
+              <table className="raw-preview-table">
                 <thead>
                   <tr>
                     {dataset.columns.map((column) => (
-                      <th key={column}>
-                        <button className="sort-header-button" type="button" onClick={() => updateSort(column)}>
-                          {column}
-                          {sortConfig?.column === column ? (sortConfig.direction === "asc" ? " ↑" : " ↓") : ""}
-                        </button>
-                      </th>
+                      <th key={column}>{column}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleRecords.length ? (
-                    visibleRecords.map((row, rowIndex) => (
-                      <tr key={`${rowIndex}-${dataset.key}`}>
+                  {dataset.metadata.rows === 0 ? (
+                    <tr>
+                      <td colSpan={dataset.columns.length || 1}>该数据文件为空，暂无可预览内容。</td>
+                    </tr>
+                  ) : visiblePreviewRows.length ? (
+                    visiblePreviewRows.map((row, rowIndex) => (
+                      <tr key={`${dataset.key}-${rowIndex}`}>
                         {dataset.columns.map((column) => (
                           <td key={column}>{valueToString(row[column]) || "暂无"}</td>
                         ))}
@@ -502,15 +405,166 @@ export function Component() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={dataset.columns.length || 1}>暂无匹配数据</td>
+                      <td colSpan={dataset.columns.length || 1}>{keyword ? "未找到匹配数据。" : "暂无可预览内容。"}</td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
-          </section>
-        </>
-      ) : null}
+            <p className="data-preview-note">
+              预览显示前 {PREVIEW_ROW_LIMIT} 条匹配记录。
+              {dataset.is_truncated ? ` 当前接口最多载入 ${dataset.api_record_limit.toLocaleString()} 行用于页面搜索。` : ""}
+            </p>
+          </div>
+        ) : null}
+
+        {detailTab === "download" ? (
+          <div className="download-grid data-detail-download-grid">
+            {downloadable.length ? (
+              downloadable.map((item) => (
+                <div className="download-item" key={item.key}>
+                  <div>
+                    <strong>{item.label}</strong>
+                    <span>
+                      {item.data_type} · {item.data_format} · {formatNumber(item.rows)} 行
+                    </span>
+                  </div>
+                  <a className="ghost-button compact-action" href={getDataCenterDownloadUrl(item.key)}>
+                    下载 CSV
+                  </a>
+                </div>
+              ))
+            ) : (
+              <div className="empty-panel">当前没有可下载的数据文件。</div>
+            )}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+export function Component() {
+  const [activeTab, setActiveTab] = useState("全部数据");
+  const [datasetKey, setDatasetKey] = useState("");
+  const [keyword, setKeyword] = useState("");
+
+  const datasetListState = useApi(getDataCenterDatasets, []);
+  const datasets = datasetListState.data?.datasets ?? [];
+  const overview = datasetListState.data?.overview;
+
+  const visibleDatasets = useMemo(() => {
+    if (activeTab === "全部数据") {
+      return datasets;
+    }
+    return datasets.filter((item) => item.data_type === activeTab);
+  }, [activeTab, datasets]);
+
+  useEffect(() => {
+    if (activeTab !== "全部数据" && !visibleDatasets.length) {
+      setDatasetKey("");
+      setKeyword("");
+      return;
+    }
+
+    const candidates = activeTab === "全部数据" ? datasets : visibleDatasets;
+    if (!candidates.length) {
+      setDatasetKey("");
+      return;
+    }
+    if (!candidates.some((item) => item.key === datasetKey)) {
+      setDatasetKey(candidates[0].key);
+      setKeyword("");
+    }
+  }, [activeTab, datasetKey, datasets, visibleDatasets]);
+
+  const datasetState = useApi<DataCenterDataset | null>(
+    () => (datasetKey ? getDataCenterDataset(datasetKey) : Promise.resolve(null)),
+    [datasetKey],
+  );
+  const dataset = datasetState.data;
+
+  const filteredRecords = useMemo(() => {
+    const records = dataset?.records ?? [];
+    const normalizedKeyword = keyword.trim().toLowerCase();
+    if (!normalizedKeyword || !dataset) {
+      return records;
+    }
+
+    const matchedByColumn = dataset.columns.some((column) => column.toLowerCase().includes(normalizedKeyword));
+    return records.filter((row) => {
+      if (matchedByColumn) {
+        return true;
+      }
+      return Object.entries(row).some(([column, value]) => {
+        return column.toLowerCase().includes(normalizedKeyword) || valueToString(value).toLowerCase().includes(normalizedKeyword);
+      });
+    });
+  }, [dataset, keyword]);
+
+  const missingTypeText = overview?.missing_data_types.length ? overview.missing_data_types.join("、") : "无";
+  const showStatus = datasetListState.loading || datasetState.loading || Boolean(datasetListState.error ?? datasetState.error);
+
+  return (
+    <div className="page-stack data-center-page">
+      <section className="data-center-intro">
+        <div className="data-center-title-block">
+          <span>Local Data Hub</span>
+          <h2>数据中心</h2>
+          <p>这里展示项目获取、缓存和处理后的原始篮球数据，包括数据来源、数据格式、字段结构、数据预览和下载入口。</p>
+        </div>
+        <div className="mode-row">
+          <span>当前模式：{overview?.data_mode ?? "无法识别"}</span>
+          <span>{overview?.data_source ?? "当前数据来源：项目本地数据文件 / 已缓存数据 / 后端接口返回数据。"}</span>
+          <span>格式：{overview?.formats.length ? overview.formats.join(" / ") : "暂无数据"}</span>
+        </div>
+        <DatasetPicker datasets={activeTab === "全部数据" ? datasets : visibleDatasets} datasetKey={datasetKey} onPick={(key) => { setDatasetKey(key); setKeyword(""); }} />
+      </section>
+
+      <div className="stat-grid data-center-stat-grid">
+        <StatCard label="数据文件" value={formatNumber(overview?.data_file_count)} trend={`${overview?.scanned_directories.length ?? 0} 个目录已扫描`} />
+        <StatCard label="总行数" value={formatNumber(overview?.total_rows)} trend="所有可读数据汇总" tone="green" icon="pulse" />
+        <StatCard label="总列数" value={formatNumber(overview?.total_columns)} trend="按数据表列数累计" tone="blue" />
+        <StatCard label="已识别表" value={formatNumber(overview?.recognized_table_count)} trend={`缺失：${missingTypeText}`} icon="shield" />
+        <StatCard label="最近更新" value={formatDateTime(overview?.latest_updated_at)} trend="来自文件修改时间" tone="amber" icon="timer" />
+      </div>
+
+      <section className="data-tabs" aria-label="数据类型">
+        {DATA_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            className={activeTab === tab.key ? "active" : undefined}
+            onClick={() => {
+              setActiveTab(tab.key);
+              setKeyword("");
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </section>
+
+      <div className="data-center-workspace">
+        {showStatus ? (
+          <div className="data-center-status">
+            <AsyncStatus loading={datasetListState.loading || datasetState.loading} error={datasetListState.error ?? datasetState.error} />
+          </div>
+        ) : null}
+        {activeTab !== "全部数据" && !visibleDatasets.length ? (
+          <section className="state-card">当前项目暂未检测到该类原始数据。</section>
+        ) : (
+          <SourceTable datasets={visibleDatasets} selectedKey={datasetKey} onPick={(key) => { setDatasetKey(key); setKeyword(""); }} />
+        )}
+        <DatasetDetailPanel
+          dataset={dataset}
+          allDatasets={datasets}
+          keyword={keyword}
+          rows={filteredRecords}
+          matchedRows={filteredRecords.length}
+          onKeywordChange={setKeyword}
+        />
+      </div>
     </div>
   );
 }
