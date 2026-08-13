@@ -68,3 +68,17 @@ class GameReviewResponse(BaseModel):
     top_players: list[dict] = Field(default_factory=list)
     game_flow: list[GameFlowPoint] = Field(default_factory=list)
     key_moments: list[dict] = Field(default_factory=list)
+
+
+class GameAIReportRequest(BaseModel):
+    force_refresh: bool = False
+
+
+class GameAIReportResponse(BaseModel):
+    success: bool
+    game_id: str
+    report_markdown: str | None = None
+    generated_at: datetime | None = None
+    cached: bool = False
+    error: str | None = None
+    message: str | None = None

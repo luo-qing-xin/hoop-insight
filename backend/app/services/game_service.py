@@ -7,6 +7,7 @@ from typing import Any
 import pandas as pd
 
 from app.schemas.game import (
+    GameAIReportResponse,
     FocusGame,
     FocusGamesResponse,
     GameReviewResponse,
@@ -16,12 +17,15 @@ from app.schemas.game import (
     TodayGamesResponse,
 )
 from app.analytics.game_flow import build_game_flow, detect_key_moments, summarize_game_flow
+from app.core.config import get_settings
+from app.services.ai_service import AIServiceError, UNCONFIGURED_MESSAGE, generate_game_detail_analysis_report
 from app.services import nba_client
 from app.utils.data_storage import save_dataframe
 
 
 RECENT_GAME_SEASON_TYPES = ("Regular Season", "Playoffs")
 logger = logging.getLogger(__name__)
+_GAME_AI_REPORT_CACHE: dict[str, dict[str, Any]] = {}
 
 
 def _current_nba_season(today: date | None = None) -> str:
@@ -440,6 +444,194 @@ def _top_players(box_score: pd.DataFrame, limit: int = 5) -> list[dict[str, Any]
         )
 
     return players
+
+
+def _report_error(game_id: str, error: str, message: str) -> GameAIReportResponse:
+    return GameAIReportResponse(success=False, game_id=game_id, error=error, message=message)
+
+
+def _short_error(value: Any, limit: int = 320) -> str:
+    text = str(value)
+    return text if len(text) <= limit else f"{text[:limit]}..."
+
+
+def _missing_llm_config() -> tuple[str, str] | None:
+    settings = get_settings()
+    if not settings.llm_api_key:
+        return "LLM_API_KEY_NOT_CONFIGURED", "大模型 API Key 未配置，请检查后端环境变量。"
+    if not settings.llm_base_url:
+        return "LLM_BASE_URL_NOT_CONFIGURED", "大模型接口地址未配置，请检查后端环境变量 LLM_BASE_URL。"
+    if not settings.llm_model:
+        return "LLM_MODEL_NOT_CONFIGURED", "大模型模型名称未配置，请检查后端环境变量 LLM_MODEL。"
+    return None
+
+
+def _first_available(items: list[dict[str, Any]], key: str) -> dict[str, Any] | None:
+    candidates = [item for item in items if item.get(key) is not None]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda item: item.get(key) or 0)
+
+
+def _build_game_report_context(review: GameReviewResponse) -> dict[str, Any]:
+    review_data = review.model_dump(mode="json")
+    top_players = review_data.get("top_players") or []
+    key_moments = review_data.get("key_moments") or []
+    game_flow = review_data.get("game_flow") or []
+    summary = review_data.get("basic_summary") or {}
+    team_comparison = review_data.get("team_comparison") or {}
+
+    return {
+        "game_id": review.game_id,
+        "data_source": "get_game_review",
+        "data_availability": {
+            "has_basic_summary": bool(summary),
+            "has_team_comparison": bool(team_comparison),
+            "game_flow_points": len(game_flow),
+            "key_moment_count": len(key_moments),
+            "top_player_count": len(top_players),
+        },
+        "game_basic_info": {
+            "game_id": review.game_id,
+            "final_score": summary.get("final_score"),
+            "winner": summary.get("winner"),
+            "home_team": team_comparison.get("home"),
+            "away_team": team_comparison.get("away"),
+            "game_date": "该字段暂无数据",
+        },
+        "game_flow_summary": {
+            "max_home_lead": summary.get("max_home_lead"),
+            "max_away_lead": summary.get("max_away_lead"),
+            "lead_changes": summary.get("lead_changes"),
+            "tie_count": summary.get("tie_count"),
+            "key_moments": key_moments[:12],
+            "game_flow_sample": game_flow[:8] + game_flow[-8:] if len(game_flow) > 16 else game_flow,
+        },
+        "player_performance": {
+            "top_players_by_impact": top_players,
+            "points_leader": _first_available(top_players, "points"),
+            "rebounds_leader": _first_available(top_players, "rebounds"),
+            "assists_leader": _first_available(top_players, "assists"),
+        },
+        "team_performance": team_comparison,
+        "raw_review": review_data,
+        "missing_fields_note": "若字段值为 null、空数组或“该字段暂无数据”，请在报告中说明当前数据不足以判断。",
+    }
+
+
+def get_game_ai_report(game_id: str, force_refresh: bool = False) -> GameAIReportResponse:
+    """Generate or return a cached LLM-backed report for a game review."""
+
+    normalized_game_id = str(game_id or "").strip()
+    logger.info("AI report request received: game_id=%s force_refresh=%s", normalized_game_id or "<missing>", force_refresh)
+    if not normalized_game_id:
+        logger.warning("AI report request rejected: missing game_id")
+        return _report_error("", "GAME_ID_MISSING", "缺少比赛 ID，暂时无法生成 AI 报告。")
+
+    if not force_refresh and normalized_game_id in _GAME_AI_REPORT_CACHE:
+        cached = _GAME_AI_REPORT_CACHE[normalized_game_id]
+        cached_report = str(cached.get("report_markdown") or "").strip()
+        if cached_report:
+            logger.info(
+                "AI report cache hit: game_id=%s generated_at=%s report_chars=%s",
+                normalized_game_id,
+                cached.get("generated_at"),
+                len(cached_report),
+            )
+            return GameAIReportResponse(
+                success=True,
+                game_id=normalized_game_id,
+                report_markdown=cached_report,
+                generated_at=cached.get("generated_at"),
+                cached=True,
+            )
+        logger.warning("AI report cache ignored because it has no report_markdown: game_id=%s", normalized_game_id)
+        _GAME_AI_REPORT_CACHE.pop(normalized_game_id, None)
+    elif force_refresh:
+        logger.info("AI report force refresh requested, cache bypassed: game_id=%s", normalized_game_id)
+
+    settings = get_settings()
+    logger.info(
+        "AI report LLM config status: game_id=%s api_key_configured=%s base_url_configured=%s model_configured=%s model=%s",
+        normalized_game_id,
+        bool(settings.llm_api_key),
+        bool(settings.llm_base_url),
+        bool(settings.llm_model),
+        settings.llm_model or "<missing>",
+    )
+    config_error = _missing_llm_config()
+    if config_error is not None:
+        error, message = config_error
+        logger.warning("AI report request rejected: game_id=%s error=%s", normalized_game_id, error)
+        return _report_error(normalized_game_id, error, message)
+
+    review = get_game_review(normalized_game_id)
+    if not review.ok:
+        logger.warning("AI report game data unavailable: game_id=%s message=%s", normalized_game_id, review.message)
+        return _report_error(
+            normalized_game_id,
+            "GAME_NOT_FOUND",
+            review.message or "当前比赛数据不足，暂时无法生成完整报告。",
+        )
+
+    if not review.basic_summary and not review.top_players and not review.game_flow and not review.key_moments:
+        logger.warning("AI report game data empty: game_id=%s", normalized_game_id)
+        return _report_error(
+            normalized_game_id,
+            "GAME_DATA_EMPTY",
+            "当前比赛数据为空，暂时无法生成完整报告。",
+        )
+
+    context = _build_game_report_context(review)
+    availability = context.get("data_availability") or {}
+    logger.info("AI report game context aggregation succeeded: game_id=%s", normalized_game_id)
+    logger.info("AI report game context built: game_id=%s availability=%s", normalized_game_id, availability)
+    logger.info(
+        "AI report game context fields: game_id=%s top_level=%s basic=%s flow=%s players=%s",
+        normalized_game_id,
+        list(context.keys()),
+        list((context.get("game_basic_info") or {}).keys()),
+        list((context.get("game_flow_summary") or {}).keys()),
+        list((context.get("player_performance") or {}).keys()),
+    )
+    logger.info("AI report LLM generation started: game_id=%s", normalized_game_id)
+    try:
+        report = generate_game_detail_analysis_report(context)
+    except AIServiceError as exc:
+        logger.warning(
+            "AI report LLM generation failed: game_id=%s error=%s detail=%s",
+            normalized_game_id,
+            exc.code,
+            _short_error(exc),
+        )
+        return _report_error(normalized_game_id, exc.code, exc.public_message)
+    except (TypeError, ValueError) as exc:
+        logger.exception("Failed to parse AI report context for game %s", normalized_game_id)
+        return _report_error(normalized_game_id, "AI_REPORT_GENERATION_FAILED", "比赛数据整理失败，请稍后重试。")
+
+    if not report or report == UNCONFIGURED_MESSAGE:
+        logger.warning("AI report LLM generation returned empty content: game_id=%s", normalized_game_id)
+        return _report_error(normalized_game_id, "LLM_EMPTY_RESPONSE", "大模型返回内容为空，请稍后重试。")
+    logger.info("AI report LLM content extracted: game_id=%s content_chars=%s", normalized_game_id, len(report))
+
+    generated_at = datetime.now()
+    _GAME_AI_REPORT_CACHE[normalized_game_id] = {
+        "report_markdown": report,
+        "generated_at": generated_at,
+    }
+    logger.info(
+        "AI report generated successfully: game_id=%s generated_at=%s report_chars=%s",
+        normalized_game_id,
+        generated_at,
+        len(report),
+    )
+    return GameAIReportResponse(
+        success=True,
+        game_id=normalized_game_id,
+        report_markdown=report,
+        generated_at=generated_at,
+        cached=False,
+    )
 
 
 def get_game_review(game_id: str) -> GameReviewResponse:

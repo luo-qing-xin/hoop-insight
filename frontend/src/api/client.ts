@@ -82,6 +82,16 @@ export type GameReviewResponse = {
   key_moments: Array<Record<string, unknown>>;
 };
 
+export type GameAiReportResponse = {
+  success: boolean;
+  game_id: string;
+  report_markdown?: string | null;
+  generated_at?: string | null;
+  cached?: boolean;
+  error?: string | null;
+  message?: string | null;
+};
+
 export type PlayerLeaderboardParams = {
   season?: string;
   stat?: string;
@@ -493,6 +503,13 @@ export function getFocusGames() {
 
 export function getGameReview(gameId: string) {
   return request<GameReviewResponse>(`/api/games/${encodeURIComponent(gameId)}/review`);
+}
+
+export function generateGameAiReport(gameId: string, forceRefresh = false) {
+  return request<GameAiReportResponse>(`/api/games/${encodeURIComponent(gameId)}/ai-report`, {
+    method: "POST",
+    body: JSON.stringify({ force_refresh: forceRefresh }),
+  });
 }
 
 export function getPlayerLeaderboard(params?: PlayerLeaderboardParams) {

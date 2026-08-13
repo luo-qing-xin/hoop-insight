@@ -2,8 +2,6 @@ export const APP_COPY = {
   brand: "Hoop Insight",
   brandSubtitle: "篮球智能分析平台",
   eyebrow: "Hoop Insight",
-  export: "导出",
-  newReport: "新建报告",
   liveModelLabel: "实时数据源",
   liveApiTitle: "FastAPI 实时接入",
   liveApiDescription: "后端可用时，页面会直接读取最新接口数据；离线演示时可切换本地 Demo 数据。",

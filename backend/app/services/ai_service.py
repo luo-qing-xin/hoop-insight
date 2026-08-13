@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import re
 from typing import Any
 
 import requests
@@ -10,10 +12,16 @@ from app.utils.name_translations import add_display_names
 
 
 UNCONFIGURED_MESSAGE = "AI 功能未配置"
+logger = logging.getLogger(__name__)
 
 
 class AIServiceError(RuntimeError):
     """Raised when a configured LLM endpoint cannot complete a request."""
+
+    def __init__(self, message: str, code: str = "LLM_REQUEST_FAILED", public_message: str | None = None):
+        super().__init__(message)
+        self.code = code
+        self.public_message = public_message or message
 
 
 def _chat_completions_endpoint(base_url: str) -> str:
@@ -25,6 +33,108 @@ def _chat_completions_endpoint(base_url: str) -> str:
 
 def _json_for_prompt(data: Any) -> str:
     return json.dumps(add_display_names(data), ensure_ascii=False, indent=2, default=str)
+
+
+def _response_text(response: requests.Response, limit: int = 500) -> str:
+    text = response.text or ""
+    return text[:limit]
+
+
+def _short_json_preview(value: Any, limit: int = 500) -> str:
+    try:
+        text = json.dumps(value, ensure_ascii=False, default=str)
+    except (TypeError, ValueError):
+        text = str(value)
+    return text[:limit]
+
+
+def _content_to_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        parts: list[str] = []
+        for item in value:
+            text = _content_to_text(item)
+            if text:
+                parts.append(text)
+        return "\n".join(parts) if parts else None
+    if isinstance(value, dict):
+        for key in ("text", "content", "output_text", "value"):
+            text = _content_to_text(value.get(key))
+            if text:
+                return text
+    return str(value)
+
+
+def extract_llm_text(payload: dict[str, Any]) -> str | None:
+    """Extract text from common OpenAI-compatible response shapes."""
+
+    choices = payload.get("choices")
+    if isinstance(choices, list) and choices:
+        first_choice = choices[0]
+        if isinstance(first_choice, dict):
+            message = first_choice.get("message")
+            if isinstance(message, dict):
+                content = _content_to_text(message.get("content"))
+                if content:
+                    return content
+            content = _content_to_text(first_choice.get("text"))
+            if content:
+                return content
+
+    for key in ("output_text", "content"):
+        content = _content_to_text(payload.get(key))
+        if content:
+            return content
+
+    data = payload.get("data")
+    if isinstance(data, dict):
+        content = _content_to_text(data.get("content"))
+        if content:
+            return content
+
+    return None
+
+
+def clean_llm_markdown_content(content: str) -> str:
+    """Trim an LLM markdown response and remove one outer fenced code block."""
+
+    text = content.strip()
+    fence_match = re.fullmatch(r"```[^\r\n]*\r?\n(?P<body>.*?)\r?\n```", text, flags=re.DOTALL)
+    if fence_match:
+        text = fence_match.group("body").strip()
+    return text
+
+
+def _raise_llm_http_error(response: requests.Response) -> None:
+    status_code = response.status_code
+    detail = _response_text(response)
+    code = "LLM_REQUEST_FAILED"
+    public_message = "大模型接口返回错误，请稍后重试。"
+
+    if status_code in (401, 403):
+        code = "LLM_API_KEY_INVALID"
+        public_message = "大模型认证失败，请检查后端 LLM_API_KEY 是否正确。"
+    elif status_code == 404:
+        code = "LLM_BASE_URL_NOT_FOUND"
+        public_message = "大模型接口地址不可用，请检查后端 LLM_BASE_URL。"
+    elif status_code == 400:
+        code = "LLM_REQUEST_INVALID"
+        public_message = "大模型请求参数无效，请检查后端 LLM_MODEL 和 LLM_BASE_URL。"
+    elif status_code == 429:
+        code = "LLM_RATE_LIMITED"
+        public_message = "大模型调用额度或频率受限，请稍后重试。"
+    elif status_code >= 500:
+        code = "LLM_PROVIDER_ERROR"
+        public_message = "大模型服务暂时不可用，请稍后重试。"
+
+    raise AIServiceError(
+        f"AI service HTTP {status_code}: {detail}",
+        code=code,
+        public_message=public_message,
+    )
 
 
 def _system_prompt(task: str) -> str:
@@ -54,6 +164,12 @@ def chat(messages: list[dict[str, str]], temperature: float = 0.2) -> str:
         return UNCONFIGURED_MESSAGE
 
     endpoint = _chat_completions_endpoint(settings.llm_base_url)
+    logger.info(
+        "Calling LLM chat completions: base_url_configured=%s model=%s messages=%s",
+        bool(settings.llm_base_url),
+        settings.llm_model,
+        len(messages),
+    )
     try:
         response = requests.post(
             endpoint,
@@ -68,17 +184,66 @@ def chat(messages: list[dict[str, str]], temperature: float = 0.2) -> str:
             },
             timeout=60,
         )
-        response.raise_for_status()
+        if not response.ok:
+            _raise_llm_http_error(response)
         payload = response.json()
+        if not isinstance(payload, dict):
+            raise AIServiceError(
+                f"AI service returned unsupported JSON payload: {_short_json_preview(payload)}",
+                code="LLM_RESPONSE_PARSE_FAILED",
+                public_message="大模型接口响应格式不符合预期，请检查后端 LLM_BASE_URL。",
+            )
+        if payload.get("error"):
+            logger.warning("AI service returned error payload: response_preview=%s", _short_json_preview(payload))
+            raise AIServiceError(
+                f"AI service returned error payload: {_short_json_preview(payload)}",
+                code="LLM_REQUEST_FAILED",
+                public_message="大模型请求失败，请稍后重试。",
+            )
+    except requests.Timeout as exc:
+        raise AIServiceError(
+            f"AI service request timed out: {exc}",
+            code="LLM_REQUEST_TIMEOUT",
+            public_message="大模型请求超时，请稍后重试。",
+        ) from exc
+    except requests.ConnectionError as exc:
+        raise AIServiceError(
+            f"AI service connection failed: {exc}",
+            code="LLM_CONNECTION_FAILED",
+            public_message="大模型服务连接失败，请检查后端网络或 LLM_BASE_URL。",
+        ) from exc
     except requests.RequestException as exc:
-        raise AIServiceError(f"AI 服务请求失败：{exc}") from exc
+        raise AIServiceError(
+            f"AI service request failed: {exc}",
+            code="LLM_REQUEST_FAILED",
+            public_message="大模型请求失败，请稍后重试。",
+        ) from exc
     except ValueError as exc:
-        raise AIServiceError("AI 服务返回了无法解析的响应") from exc
+        logger.warning("AI service returned an invalid JSON response: preview=%s", _short_json_preview(exc))
+        raise AIServiceError(
+            "AI service returned an invalid JSON response",
+            code="LLM_RESPONSE_PARSE_FAILED",
+            public_message="大模型接口响应无法解析，请检查后端 LLM_BASE_URL 是否为 OpenAI-compatible 地址。",
+        ) from exc
 
-    answer = payload.get("choices", [{}])[0].get("message", {}).get("content")
+    answer = extract_llm_text(payload)
     if not answer:
-        raise AIServiceError("AI 服务返回了空内容")
-    return str(answer).strip()
+        logger.warning("LLM response text extraction failed: response_preview=%s", _short_json_preview(payload))
+        raise AIServiceError(
+            "AI service returned empty content",
+            code="LLM_EMPTY_RESPONSE",
+            public_message="大模型返回内容为空，请稍后重试。",
+        )
+    content = clean_llm_markdown_content(answer)
+    if not content:
+        logger.warning("LLM response content is empty after cleanup")
+        raise AIServiceError(
+            "AI service returned empty content after cleanup",
+            code="LLM_EMPTY_RESPONSE",
+            public_message="大模型返回内容为空，请稍后重试。",
+        )
+    logger.info("LLM chat completions succeeded: content_chars=%s", len(content))
+    return content
 
 
 def generate_game_report(game_review_data: Any) -> str:
@@ -94,6 +259,46 @@ def generate_game_report(game_review_data: Any) -> str:
         },
     ]
     return chat(messages)
+
+
+def generate_game_detail_analysis_report(game_context: dict[str, Any]) -> str:
+    """Generate a page-ready Chinese Markdown report for a single game."""
+
+    system_prompt = (
+        "你是一个专业篮球数据分析助手。请基于提供的比赛数据生成中文 Markdown 分析报告。"
+        "只能基于提供的数据分析，不要编造不存在的比分、球员数据或比赛事件。"
+        "如果数据不足，请说明“当前数据不足以判断”。输出中文。输出 Markdown。不要输出 JSON。"
+        "不要把结果包裹在代码块中。不要输出解释性前缀，例如“下面是报告”。"
+    )
+    user_prompt = (
+        "要求：\n"
+        "1. 只能基于提供的数据分析，不要编造不存在的比分、球员数据或比赛事件。\n"
+        "2. 如果数据不足，请说明“当前数据不足以判断”。\n"
+        "3. 输出中文。\n"
+        "4. 输出 Markdown。\n"
+        "5. 不要输出 JSON。\n"
+        "6. 不要把结果包裹在代码块中。\n"
+        "7. 不要输出解释性前缀，例如“下面是报告”。\n"
+        "8. 报告必须包含以下部分：\n"
+        "   - 比赛总结\n"
+        "   - 胜负关键\n"
+        "   - 关键转折点\n"
+        "   - 重点球员表现\n"
+        "   - 战术与趋势观察\n"
+        "   - 下一场关注点\n\n"
+        "补充约束：\n"
+        "- 如果数据不足以支持某一部分，请在对应部分说明数据不足。\n"
+        "- 报告长度不少于 500 个中文字符，避免空泛套话。\n\n"
+        "比赛数据如下：\n"
+        f"{_json_for_prompt(game_context)}"
+    )
+    return chat(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0.2,
+    )
 
 
 def generate_player_report(player_profile_data: Any) -> str:

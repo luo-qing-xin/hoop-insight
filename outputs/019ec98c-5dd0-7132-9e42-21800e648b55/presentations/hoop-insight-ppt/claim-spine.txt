@@ -1,0 +1,22 @@
+Thesis:
+Hoop Insight connects NBA official data access, Python analytics, FastAPI services, React visualization, and natural-language question answering into one basketball intelligence workflow.
+
+Audience:
+Course teacher and classmates.
+
+One-line arc:
+Start from the product purpose, show how data moves through the system, explain the official data interfaces and local data layers, then close with the three standout capabilities.
+
+Slides:
+1. Hoop Insight is a full-stack NBA analytics and intelligent question-answering system.
+   Proof object: cover metric rail and half-court data motif.
+2. The system turns NBA official data into front-end insights through a three-layer flow.
+   Proof object: frontend / FastAPI / data processing architecture flow.
+3. nba_api provides the official endpoint foundation for games, players, teams, shots, play-by-play, and box scores.
+   Proof object: six-interface capability map.
+4. raw, processed, and cache split source preservation, page-ready data, and request acceleration.
+   Proof object: three-directory data store map.
+5. The project stands out through shot-space visualization, natural-language analytics, and automated NBA API ingestion.
+   Proof object: three feature demonstrations.
+6. The project is ready for demonstration and future iteration.
+   Proof object: closing summary band.

@@ -1,0 +1,8 @@
+task mode: create
+primary deck-profile: engineering-platform
+secondary gates: consumer sports analytics visuals
+required proof objects: architecture data flow, NBA API interface map, local data directory structure, feature highlight visuals
+source/asset requirements: user-provided outline and local README/code inventory. No NBA logo or team marks are used.
+brand authenticity constraints: use the Hoop Insight product name as text only; do not draw or approximate official NBA marks.
+profile-specific QA gates: slide claims must be readable, diagrams must have clear flow direction, every dense page must include a proof object instead of only bullets.
+known missing inputs: no official project screenshots or template deck provided.

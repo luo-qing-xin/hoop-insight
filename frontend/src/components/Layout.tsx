@@ -21,14 +21,6 @@ export default function Layout({ title, eyebrow = APP_COPY.eyebrow, description,
             <h1>{title}</h1>
             <p>{description}</p>
           </div>
-          <div className="topbar-actions">
-            <button className="ghost-button" type="button">
-              {APP_COPY.export}
-            </button>
-            <button className="primary-button" type="button">
-              {APP_COPY.newReport}
-            </button>
-          </div>
         </header>
         <main className="content-area">{children}</main>
       </div>

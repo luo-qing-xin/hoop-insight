@@ -1,8 +1,10 @@
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getGameReview, type GameReviewResponse, useApi } from "../api/client";
+import { generateGameAiReport, getGameReview, type GameAiReportResponse, type GameReviewResponse, useApi } from "../api/client";
 import { formatNumber, formatPercent } from "../api/formatters";
 import GameFlowChart from "../charts/GameFlowChart";
 import { AsyncStatus } from "../components/AsyncState";
+import MarkdownContent from "../components/MarkdownContent";
 import StatCard from "../components/StatCard";
 import { COMMON_COPY, MOMENT_LABELS } from "../constants/zhLabels";
 import { translatePlayerName, translateTeamName } from "../utils/nameTranslations";
@@ -149,6 +151,10 @@ function formatMetric(value: number | null, format: string) {
 export function Component() {
   const { gameId } = useParams();
   const review = useApi(() => (gameId ? getGameReview(gameId) : Promise.reject(new Error("缺少比赛 ID"))), [gameId]);
+  const [aiReport, setAiReport] = useState<GameAiReportResponse | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const currentGameIdRef = useRef(gameId);
   const data = review.data;
   const summary: LooseRecord = data?.basic_summary ?? {};
   const finalScore = asRecord(summary.final_score);
@@ -164,6 +170,62 @@ export function Component() {
     type: readString(moment, ["type"], ""),
   }));
   const playerRows = (data?.top_players ?? []).map(asRecord).filter((player): player is LooseRecord => Boolean(player));
+
+  useEffect(() => {
+    currentGameIdRef.current = gameId;
+    setAiReport(null);
+    setAiError(null);
+    setAiLoading(false);
+  }, [gameId]);
+
+  async function handleGenerateReport(forceRefresh = false) {
+    if (!gameId || aiLoading) {
+      return;
+    }
+
+    const requestedGameId = gameId;
+    setAiLoading(true);
+    setAiError(null);
+
+    try {
+      const response = await generateGameAiReport(requestedGameId, forceRefresh);
+      if (currentGameIdRef.current !== requestedGameId) {
+        return;
+      }
+      if (!response.success) {
+        console.error("AI report generation failed", {
+          gameId: requestedGameId,
+          error: response.error,
+          message: response.message,
+          response,
+        });
+        setAiError(response.message || "AI 报告生成失败，请稍后重试。");
+        return;
+      }
+      if (!response.report_markdown) {
+        console.error("AI report response missing report_markdown", {
+          gameId: requestedGameId,
+          response,
+        });
+        setAiError(response.message || "大模型返回内容为空，请稍后重试。");
+        return;
+      }
+      setAiReport(response);
+    } catch (caught) {
+      if (currentGameIdRef.current !== requestedGameId) {
+        return;
+      }
+      console.error("AI report request failed", {
+        gameId: requestedGameId,
+        error: caught,
+      });
+      setAiError(caught instanceof Error ? caught.message : "AI 报告生成失败，请稍后重试。");
+    } finally {
+      if (currentGameIdRef.current === requestedGameId) {
+        setAiLoading(false);
+      }
+    }
+  }
 
   return (
     <div className="page-stack">
@@ -319,10 +381,39 @@ export function Component() {
         </section>
       </section>
 
-      <section className="ai-review-placeholder">
-        <span>AI 复盘</span>
-        <h2>AI 生成分析报告</h2>
-        <p>后续可在这里生成比赛总结、胜负手、战术趋势和下一场观察点；实时数据不完整时，页面结构保持稳定。</p>
+      <section className="ai-report-card">
+        <div className="card-heading ai-report-heading">
+          <div>
+            <span className="ai-report-tag">AI 复盘</span>
+            <h2>AI 生成分析报告</h2>
+            <p>基于当前比赛的比分走势、关键节点、球队对比和高影响力球员生成中文 Markdown 复盘。</p>
+          </div>
+          <div className="ai-report-actions">
+            {aiReport?.generated_at ? (
+              <small>
+                {aiReport.cached ? "已缓存" : "最新生成"} · {new Date(aiReport.generated_at).toLocaleString("zh-CN")}
+              </small>
+            ) : null}
+            <button type="button" onClick={() => handleGenerateReport(Boolean(aiReport))} disabled={aiLoading || review.loading || !gameId || Boolean(data && !data.ok)}>
+              {aiLoading ? "生成中..." : aiReport ? "重新生成" : "生成 AI 报告"}
+            </button>
+          </div>
+        </div>
+
+        {aiLoading ? <div className="ai-report-status">正在生成比赛分析报告，请稍候...</div> : null}
+        {aiError ? <div className="ai-report-error">{aiError}</div> : null}
+
+        {aiReport?.success && aiReport.report_markdown ? (
+          <>
+            <MarkdownContent content={aiReport.report_markdown} className="markdown-answer ai-report-content" />
+            <p className="ai-report-footnote">报告基于当前页面可用比赛数据生成，若实时数据不完整，分析可能受限。</p>
+          </>
+        ) : !aiLoading && !aiError ? (
+          <div className="ai-report-empty">
+            <strong>等待生成</strong>
+            <span>点击按钮后，后端会按当前 game_id 聚合真实比赛数据并调用大模型生成报告。</span>
+          </div>
+        ) : null}
       </section>
     </div>
   );
