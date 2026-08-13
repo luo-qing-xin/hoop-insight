@@ -82,6 +82,16 @@ export type GameReviewResponse = {
   key_moments: Array<Record<string, unknown>>;
 };
 
+export type GameAiReportResponse = {
+  success: boolean;
+  game_id: string;
+  report_markdown?: string | null;
+  generated_at?: string | null;
+  cached?: boolean;
+  error?: string | null;
+  message?: string | null;
+};
+
 export type PlayerLeaderboardParams = {
   season?: string;
   stat?: string;
@@ -98,11 +108,21 @@ export type PlayerLeaderboardEntry = {
   team_abbr?: string | null;
   age?: number | null;
   gp?: number | null;
+  mpg?: number | null;
   min?: number | null;
+  total_min?: number | null;
+  ppg?: number | null;
   pts?: number | null;
+  total_pts?: number | null;
+  rpg?: number | null;
   reb?: number | null;
+  total_reb?: number | null;
+  apg?: number | null;
   ast?: number | null;
+  total_ast?: number | null;
+  spg?: number | null;
   stl?: number | null;
+  bpg?: number | null;
   blk?: number | null;
   fg_pct?: number | null;
   fg3_pct?: number | null;
@@ -295,6 +315,7 @@ export type AskAiResponse = {
   entities?: Record<string, unknown>;
   need_data?: string[];
   data?: unknown;
+  analysis?: unknown;
   [key: string]: unknown;
 };
 
@@ -482,6 +503,13 @@ export function getFocusGames() {
 
 export function getGameReview(gameId: string) {
   return request<GameReviewResponse>(`/api/games/${encodeURIComponent(gameId)}/review`);
+}
+
+export function generateGameAiReport(gameId: string, forceRefresh = false) {
+  return request<GameAiReportResponse>(`/api/games/${encodeURIComponent(gameId)}/ai-report`, {
+    method: "POST",
+    body: JSON.stringify({ force_refresh: forceRefresh }),
+  });
 }
 
 export function getPlayerLeaderboard(params?: PlayerLeaderboardParams) {

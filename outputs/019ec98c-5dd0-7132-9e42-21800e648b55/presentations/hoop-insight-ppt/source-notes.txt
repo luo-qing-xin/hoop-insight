@@ -1,0 +1,7 @@
+Sources:
+- User-provided PPT outline in the conversation.
+- Local README.md and PROJECT_CODE_EXPLANATION.md for implementation details and route/API structure.
+- Local repository file inventory for data folders, backend modules, frontend pages, and tests.
+
+Identity assets:
+- None embedded. The deck avoids NBA/team logos and uses generic editable basketball/data shapes.

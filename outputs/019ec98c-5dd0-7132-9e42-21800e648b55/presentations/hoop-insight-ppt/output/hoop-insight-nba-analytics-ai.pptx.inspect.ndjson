@@ -1,0 +1,228 @@
+{"kind":"deck","id":"pr/vzor4p","name":"Deck"}
+{"kind":"layout","layoutId":"eaaf7830-546f-4209-b653-671e3bac2e82","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"d740297d-af05-48f8-84a0-36205e7c7f2e","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/43hu4y","slide":1,"title":"NBA DATA · FASTAPI · REACT · AI","textShapes":14}
+{"kind":"shape","id":"sh/x4nap4r6","slide":1,"bbox":[0,0,1280,720]}
+{"kind":"shape","id":"sh/qd4vmtwr","slide":1,"bbox":[0,0,1280,720]}
+{"kind":"shape","id":"sh/fyxobm58","slide":1,"bbox":[845,108,310.5,264.5]}
+{"kind":"shape","id":"sh/8v6psfil","slide":1,"bbox":[942.75,108,115,89.7]}
+{"kind":"shape","id":"sh/xczed8v6","slide":1,"bbox":[971.5,165.5,57.5,57.5]}
+{"kind":"shape","id":"sh/qpg3ex0n","slide":1,"bbox":[980.7,144.8,39.1,4.6]}
+{"kind":"shape","id":"sh/fa9w3m94","slide":1,"bbox":[955.4,209.2,89.7,89.7]}
+{"kind":"shape","id":"sh/8z25kb6x","slide":1,"bbox":[886.4,147.1,227.7,227.7]}
+{"kind":"shape","id":"sh/1gvy90je","slide":1,"bbox":[910,180,9,9]}
+{"kind":"shape","id":"sh/pg3ex0nu","slide":1,"bbox":[985,218,9,9]}
+{"kind":"shape","id":"sh/wval87ed","slide":1,"bbox":[1048,156,9,9]}
+{"kind":"shape","id":"sh/7adsji5s","slide":1,"bbox":[1120,250,9,9]}
+{"kind":"shape","id":"sh/epkzupwb","slide":1,"bbox":[936,314,9,9]}
+{"kind":"shape","id":"sh/psfil0rq","slide":1,"bbox":[1092,352,9,9]}
+{"kind":"shape","id":"sh/w7mp0bi9","slide":1,"bbox":[1010,402,9,9]}
+{"kind":"shape","id":"sh/7mp0bi9s","slide":1,"bbox":[1150,165,9,9]}
+{"kind":"shape","id":"sh/e1w7mp0b","slide":1,"bbox":[74,78,272,30]}
+{"kind":"textbox","id":"sh/l0rqd4vm","slide":1,"text":"NBA DATA · FASTAPI · REACT · AI","textPreview":"NBA DATA · FASTAPI · REACT · AI","textChars":31,"textLines":1,"bbox":[86,83,248,20]}
+{"kind":"textbox","id":"sh/wfyxobm5","slide":1,"text":"Hoop Insight","textPreview":"Hoop Insight","textChars":12,"textLines":1,"bbox":[72,150,650,82]}
+{"kind":"textbox","id":"sh/svu9knih","slide":1,"text":"NBA 篮球数据分析与智能问数系统","textPreview":"NBA 篮球数据分析与智能问数系统","textChars":17,"textLines":1,"bbox":[72,238,760,58]}
+{"kind":"textbox","id":"sh/hgn29gr2","slide":1,"text":"从 NBA 官方数据接口到可视化复盘，再到中文自然语言问数的一体化课程项目。","textPreview":"从 NBA 官方数据接口到可视化复盘，再到中文自然语言问数的一体化课程项目。","textChars":38,"textLines":1,"bbox":[76,320,720,58]}
+{"kind":"shape","id":"sh/ap4r65wj","slide":1,"bbox":[76,440,126,94]}
+{"kind":"textbox","id":"sh/za1gvy90","slide":1,"text":"8","textPreview":"8","textChars":1,"textLines":1,"bbox":[92,456,94,38]}
+{"kind":"textbox","id":"sh/s36hcrmh","slide":1,"text":"核心页面","textPreview":"核心页面","textChars":4,"textLines":1,"bbox":[88,500,102,22]}
+{"kind":"shape","id":"sh/hoza1gvy","slide":1,"bbox":[236,440,126,94]}
+{"kind":"textbox","id":"sh/a1gvy90j","slide":1,"text":"6","textPreview":"6","textChars":1,"textLines":1,"bbox":[252,456,94,38]}
+{"kind":"textbox","id":"sh/zidonyd0","slide":1,"text":"NBA 接口族","textPreview":"NBA 接口族","textChars":7,"textLines":1,"bbox":[248,500,102,22]}
+{"kind":"shape","id":"sh/s72x4nap","slide":1,"bbox":[396,440,126,94]}
+{"kind":"textbox","id":"sh/lszqtcj6","slide":1,"text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[412,456,94,38]}
+{"kind":"textbox","id":"sh/nih4byhg","slide":1,"text":"数据文件层","textPreview":"数据文件层","textChars":5,"textLines":1,"bbox":[408,500,102,22]}
+{"kind":"shape","id":"sh/yxobm58z","slide":1,"bbox":[556,440,126,94]}
+{"kind":"textbox","id":"sh/5o7qpg3e","slide":1,"text":"AI","textPreview":"AI","textChars":2,"textLines":1,"bbox":[572,456,94,38]}
+{"kind":"textbox","id":"sh/g3ex0nux","slide":1,"text":"中文问数助手","textPreview":"中文问数助手","textChars":6,"textLines":1,"bbox":[568,500,102,22]}
+{"kind":"textbox","id":"sh/r65wjudg","slide":1,"text":"汇报人：吕品正","textPreview":"汇报人：吕品正","textChars":7,"textLines":1,"bbox":[76,610,260,28]}
+{"kind":"textbox","id":"sh/ylc7u54z","slide":1,"text":"课程项目展示","textPreview":"课程项目展示","textChars":6,"textLines":1,"bbox":[1042,610,150,24]}
+{"kind":"notes","id":"nt/43hu4y","slide":1,"text":""}
+{"kind":"slide","id":"sl/405cww","slide":2,"title":"ARCHITECTURE","textShapes":20}
+{"kind":"shape","id":"sh/8jqh0fep","slide":2,"bbox":[0,0,1280,720]}
+{"kind":"shape","id":"sh/fyxobm58","slide":2,"bbox":[72,57,30,3]}
+{"kind":"textbox","id":"sh/qd4vmtwr","slide":2,"text":"ARCHITECTURE","textPreview":"ARCHITECTURE","textChars":12,"textLines":1,"bbox":[114,50,360,22]}
+{"kind":"textbox","id":"sh/xczed8v6","slide":2,"text":"三层链路把 NBA 官方数据转成可交互分析。","textPreview":"三层链路把 NBA 官方数据转成可交互分析。","textChars":22,"textLines":1,"bbox":[72,82,880,92]}
+{"kind":"shape","id":"sh/8v6psfil","slide":2,"bbox":[72,205,320,310]}
+{"kind":"shape","id":"sh/fa9w3m94","slide":2,"bbox":[72,205,5,310]}
+{"kind":"textbox","id":"sh/qpg3ex0n","slide":2,"text":"前端展示层","textPreview":"前端展示层","textChars":5,"textLines":1,"bbox":[94,221,286,28]}
+{"kind":"textbox","id":"sh/1gvy90je","slide":2,"text":"React + TypeScript + Vite\n\n8 个核心页面：总览、比赛、单场复盘、球员、球队、投篮、数据中心、智能问数\n\nReact SVG / CSS 图表：雷达图、投篮图、热区图、比分走势","textPreview":"React + TypeScript + Vite |  | 8 个核心页面：总览、比赛、单场复盘、球员、球队、投篮、数据中心、智能问数 |  | React SVG / CSS 图表：雷达图、投篮图、热区图、比分走势","textChars":101,"textLines":5,"bbox":[94,259,286,244]}
+{"kind":"textbox","id":"sh/8z25kb6x","slide":2,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[416,330,48,44]}
+{"kind":"shape","id":"sh/a9w3m94f","slide":2,"bbox":[474,205,320,310]}
+{"kind":"shape","id":"sh/zupwb2hw","slide":2,"bbox":[474,205,5,310]}
+{"kind":"textbox","id":"sh/sfil0rqd","slide":2,"text":"在线后端层","textPreview":"在线后端层","textChars":5,"textLines":1,"bbox":[496,221,286,28]}
+{"kind":"textbox","id":"sh/h0fepkzu","slide":2,"text":"FastAPI 在线服务\n\n接口模块：比赛、球员、球队、投篮、数据中心、AI 问数\n\nService 层封装查询与业务逻辑；Analytics 层计算走势、关键时刻、热区、高级指标","textPreview":"FastAPI 在线服务 |  | 接口模块：比赛、球员、球队、投篮、数据中心、AI 问数 |  | Service 层封装查询与业务逻辑；Analytics 层计算走势、关键时刻、热区、高级指标","textChars":90,"textLines":5,"bbox":[496,259,286,244]}
+{"kind":"textbox","id":"sh/al87ed8b","slide":2,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[820,330,48,44]}
+{"kind":"shape","id":"sh/z61032ls","slide":2,"bbox":[878,205,320,310]}
+{"kind":"shape","id":"sh/orytsvu9","slide":2,"bbox":[878,205,5,310]}
+{"kind":"textbox","id":"sh/hcrmhk3q","slide":2,"text":"数据处理层","textPreview":"数据处理层","textChars":5,"textLines":1,"bbox":[900,221,286,28]}
+{"kind":"textbox","id":"sh/6xkf6dcb","slide":2,"text":"Python + pandas + nba_api\n\n拉取比赛、球员、球队、投篮和回合数据\n\n生成 raw / processed / cache 三层数据文件，兼顾溯源、展示与性能","textPreview":"Python + pandas + nba_api |  | 拉取比赛、球员、球队、投篮和回合数据 |  | 生成 raw / processed / cache 三层数据文件，兼顾溯源、展示与性能","textChars":91,"textLines":5,"bbox":[900,259,286,244]}
+{"kind":"shape","id":"sh/zed8v6ps","slide":2,"bbox":[146,568,178,44]}
+{"kind":"textbox","id":"sh/nih4byhg","slide":2,"text":"页面路由","textPreview":"页面路由","textChars":4,"textLines":1,"bbox":[160,578,70,18]}
+{"kind":"textbox","id":"sh/yxobm58z","slide":2,"text":"React Router","textPreview":"React Router","textChars":12,"textLines":1,"bbox":[230,578,82,18]}
+{"kind":"shape","id":"sh/5o7qpg3e","slide":2,"bbox":[406,568,178,44]}
+{"kind":"textbox","id":"sh/g3ex0nux","slide":2,"text":"业务接口","textPreview":"业务接口","textChars":4,"textLines":1,"bbox":[420,578,70,18]}
+{"kind":"textbox","id":"sh/r65wjudg","slide":2,"text":"FastAPI Router","textPreview":"FastAPI Router","textChars":14,"textLines":1,"bbox":[490,578,82,18]}
+{"kind":"shape","id":"sh/ylc7u54z","slide":2,"bbox":[666,568,178,44]}
+{"kind":"textbox","id":"sh/9cvixcze","slide":2,"text":"分析计算","textPreview":"分析计算","textChars":4,"textLines":1,"bbox":[680,578,70,18]}
+{"kind":"textbox","id":"sh/gr2p8nqx","slide":2,"text":"pandas Analytics","textPreview":"pandas Analytics","textChars":16,"textLines":1,"bbox":[750,578,82,18]}
+{"kind":"shape","id":"sh/rytsvu9k","slide":2,"bbox":[926,568,178,44]}
+{"kind":"textbox","id":"sh/yd0z6103","slide":2,"text":"官方数据","textPreview":"官方数据","textChars":4,"textLines":1,"bbox":[940,578,70,18]}
+{"kind":"textbox","id":"sh/svu9knih","slide":2,"text":"NBA.com endpoints","textPreview":"NBA.com endpoints","textChars":17,"textLines":1,"bbox":[1010,578,82,18]}
+{"kind":"shape","id":"sh/hgn29gr2","slide":2,"bbox":[72,676,1040,1]}
+{"kind":"textbox","id":"sh/ap4r65wj","slide":2,"text":"Hoop Insight · NBA 篮球数据分析与智能问数系统","textPreview":"Hoop Insight · NBA 篮球数据分析与智能问数系统","textChars":32,"textLines":1,"bbox":[72,685,700,20]}
+{"kind":"textbox","id":"sh/za1gvy90","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1160,681,48,26]}
+{"kind":"notes","id":"nt/405cww","slide":2,"text":""}
+{"kind":"slide","id":"sl/a70g6j","slide":3,"title":"NBA OFFICIAL DATA","textShapes":19}
+{"kind":"shape","id":"sh/tgfmlkjm","slide":3,"bbox":[0,0,1280,720]}
+{"kind":"shape","id":"sh/mp0bi9s3","slide":3,"bbox":[72,57,30,3]}
+{"kind":"textbox","id":"sh/bat47y1k","slide":3,"text":"NBA OFFICIAL DATA","textPreview":"NBA OFFICIAL DATA","textChars":17,"textLines":1,"bbox":[114,50,360,22]}
+{"kind":"textbox","id":"sh/47y1kre1","slide":3,"text":"nba_api 是比赛、球员、球队、投篮和回合数据的统一入口。","textPreview":"nba_api 是比赛、球员、球队、投篮和回合数据的统一入口。","textChars":31,"textLines":1,"bbox":[72,82,980,92]}
+{"kind":"shape","id":"sh/tsvu9kni","slide":3,"bbox":[470,244,340,166]}
+{"kind":"textbox","id":"sh/m1cfa9w3","slide":3,"text":"nba_api","textPreview":"nba_api","textChars":7,"textLines":1,"bbox":[505,278,270,46]}
+{"kind":"textbox","id":"sh/bm58z25k","slide":3,"text":"Python API Client\n访问 NBA.com 官方数据接口","textPreview":"Python API Client | 访问 NBA.com 官方数据接口","textChars":35,"textLines":2,"bbox":[510,335,260,48]}
+{"kind":"shape","id":"sh/4byhgn29","slide":3,"bbox":[70,205,300,96]}
+{"kind":"textbox","id":"sh/twra5gbq","slide":3,"text":"LeagueGameLog","textPreview":"LeagueGameLog","textChars":13,"textLines":1,"bbox":[86,218,268,24]}
+{"kind":"textbox","id":"sh/1cfa9w3m","slide":3,"text":"获取赛季比赛日志；支持常规赛 / 季后赛记录","textPreview":"获取赛季比赛日志；支持常规赛 / 季后赛记录","textChars":22,"textLines":1,"bbox":[86,250,268,40]}
+{"kind":"shape","id":"sh/crmhk3q5","slide":3,"bbox":[70,340,300,112]}
+{"kind":"textbox","id":"sh/j6tovaho","slide":3,"text":"LeagueDashPlayerStats","textPreview":"LeagueDashPlayerStats","textChars":21,"textLines":1,"bbox":[86,353,268,24]}
+{"kind":"textbox","id":"sh/ulwval87","slide":3,"text":"获取球员基础数据与高级数据，用于榜单和对比","textPreview":"获取球员基础数据与高级数据，用于榜单和对比","textChars":21,"textLines":1,"bbox":[86,385,268,56]}
+{"kind":"shape","id":"sh/1kre1w7m","slide":3,"bbox":[70,492,300,96]}
+{"kind":"textbox","id":"sh/c3ylc7u5","slide":3,"text":"LeagueDashTeamStats","textPreview":"LeagueDashTeamStats","textChars":19,"textLines":1,"bbox":[86,505,268,24]}
+{"kind":"textbox","id":"sh/ji5snelo","slide":3,"text":"获取球队基础、高级、四要素、防守和对手数据","textPreview":"获取球队基础、高级、四要素、防守和对手数据","textChars":21,"textLines":1,"bbox":[86,537,268,40]}
+{"kind":"shape","id":"sh/uxc3ylc7","slide":3,"bbox":[910,205,300,112]}
+{"kind":"textbox","id":"sh/1w7mp0bi","slide":3,"text":"ShotChartDetail","textPreview":"ShotChartDetail","textChars":15,"textLines":1,"bbox":[926,218,268,24]}
+{"kind":"textbox","id":"sh/8bat47y1","slide":3,"text":"获取球员 / 球队投篮坐标和投篮区域数据","textPreview":"获取球员 / 球队投篮坐标和投篮区域数据","textChars":20,"textLines":1,"bbox":[926,250,268,56]}
+{"kind":"shape","id":"sh/o7qpg3ex","slide":3,"bbox":[910,358,300,96]}
+{"kind":"textbox","id":"sh/dsji5sne","slide":3,"text":"PlayByPlayV3","textPreview":"PlayByPlayV3","textChars":12,"textLines":1,"bbox":[926,371,268,24]}
+{"kind":"textbox","id":"sh/61032lsz","slide":3,"text":"获取单场比赛逐回合事件流，用于走势和关键时刻","textPreview":"获取单场比赛逐回合事件流，用于走势和关键时刻","textChars":22,"textLines":1,"bbox":[926,403,268,40]}
+{"kind":"shape","id":"sh/vmtwra5g","slide":3,"bbox":[910,492,300,96]}
+{"kind":"textbox","id":"sh/oj2t83it","slide":3,"text":"BoxScoreTraditionalV2","textPreview":"BoxScoreTraditionalV2","textChars":21,"textLines":1,"bbox":[926,505,268,24]}
+{"kind":"textbox","id":"sh/d4vmtwra","slide":3,"text":"获取单场球员技术统计，支撑复盘与影响力分析","textPreview":"获取单场球员技术统计，支撑复盘与影响力分析","textChars":21,"textLines":1,"bbox":[926,537,268,40]}
+{"kind":"shape","id":"sh/6dcbulwv","slide":3,"bbox":[370,252,100,2]}
+{"kind":"shape","id":"sh/vy90je9c","slide":3,"bbox":[370,396,100,2]}
+{"kind":"shape","id":"sh/onyd0z61","slide":3,"bbox":[370,540,100,2]}
+{"kind":"shape","id":"sh/d8v6psfi","slide":3,"bbox":[810,306,100,2]}
+{"kind":"shape","id":"sh/3ex0nuxc","slide":3,"bbox":[810,330,100,2]}
+{"kind":"shape","id":"sh/at47y1kr","slide":3,"bbox":[810,356,100,2]}
+{"kind":"textbox","id":"sh/lkjm1cfa","slide":3,"text":"接口层覆盖“赛季级统计 + 单场级事件 + 空间投篮坐标”，因此既能做榜单，也能做单场复盘和投篮区域分析。","textPreview":"接口层覆盖“赛季级统计 + 单场级事件 + 空间投篮坐标”，因此既能做榜单，也能做单场复盘和投篮区域分析。","textChars":53,"textLines":1,"bbox":[445,470,390,56]}
+{"kind":"shape","id":"sh/szqtcj6t","slide":3,"bbox":[72,676,1040,1]}
+{"kind":"textbox","id":"sh/32lszqtc","slide":3,"text":"Hoop Insight · NBA 篮球数据分析与智能问数系统","textPreview":"Hoop Insight · NBA 篮球数据分析与智能问数系统","textChars":32,"textLines":1,"bbox":[72,685,700,20]}
+{"kind":"textbox","id":"sh/ahoza1gv","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1160,681,48,26]}
+{"kind":"notes","id":"nt/a70g6j","slide":3,"text":""}
+{"kind":"slide","id":"sl/ohrlzd","slide":4,"title":"LOCAL DATA STORE","textShapes":13}
+{"kind":"shape","id":"sh/fyxobm58","slide":4,"bbox":[0,0,1280,720]}
+{"kind":"shape","id":"sh/8jqh0fep","slide":4,"bbox":[72,57,30,3]}
+{"kind":"textbox","id":"sh/x4nap4r6","slide":4,"text":"LOCAL DATA STORE","textPreview":"LOCAL DATA STORE","textChars":16,"textLines":1,"bbox":[114,50,360,22]}
+{"kind":"textbox","id":"sh/qpg3ex0n","slide":4,"text":"raw / processed / cache 分离，让数据可追溯、可展示、可复用。","textPreview":"raw / processed / cache 分离，让数据可追溯、可展示、可复用。","textChars":42,"textLines":1,"bbox":[72,82,980,92]}
+{"kind":"shape","id":"sh/fa9w3m94","slide":4,"bbox":[92,215,315,330]}
+{"kind":"shape","id":"sh/8v6psfil","slide":4,"bbox":[92,215,5,330]}
+{"kind":"textbox","id":"sh/xczed8v6","slide":4,"text":"data/raw","textPreview":"data/raw","textChars":8,"textLines":1,"bbox":[114,231,281,28]}
+{"kind":"textbox","id":"sh/qtcj6tov","slide":4,"text":"保存 NBA 接口返回的原始数据\n\n用途：保留最初来源，方便检查字段、重新处理和对比接口变更\n\n示例：LeagueGameLog、ShotChartDetail、PlayByPlayV3 原始 CSV","textPreview":"保存 NBA 接口返回的原始数据 |  | 用途：保留最初来源，方便检查字段、重新处理和对比接口变更 |  | 示例：LeagueGameLog、ShotChartDetail、PlayByPlayV3 原始 CSV","textChars":100,"textLines":5,"bbox":[114,269,281,264]}
+{"kind":"shape","id":"sh/je9cvixc","slide":4,"bbox":[482,215,315,330]}
+{"kind":"shape","id":"sh/nih4byhg","slide":4,"bbox":[482,215,5,330]}
+{"kind":"textbox","id":"sh/yxobm58z","slide":4,"text":"data/processed","textPreview":"data/processed","textChars":14,"textLines":1,"bbox":[504,231,281,28]}
+{"kind":"textbox","id":"sh/5o7qpg3e","slide":4,"text":"保存清洗后的演示数据和页面可读数据\n\n用途：供前端展示、后端分析、demo 模式稳定运行\n\n示例：games、players、teams、shots、game_flow、box_scores","textPreview":"保存清洗后的演示数据和页面可读数据 |  | 用途：供前端展示、后端分析、demo 模式稳定运行 |  | 示例：games、players、teams、shots、game_flow、box_scores","textChars":95,"textLines":5,"bbox":[504,269,281,264]}
+{"kind":"shape","id":"sh/g3ex0nux","slide":4,"bbox":[872,215,315,330]}
+{"kind":"shape","id":"sh/r65wjudg","slide":4,"bbox":[872,215,5,330]}
+{"kind":"textbox","id":"sh/ylc7u54z","slide":4,"text":"data/cache","textPreview":"data/cache","textChars":10,"textLines":1,"bbox":[894,231,281,28]}
+{"kind":"textbox","id":"sh/9cvixcze","slide":4,"text":"缓存 API 响应和本地查询结果\n\n用途：减少重复请求、提升运行效率、避免频繁访问 NBA 官方接口\n\n缓存过期后可自动重新拉取最新数据","textPreview":"缓存 API 响应和本地查询结果 |  | 用途：减少重复请求、提升运行效率、避免频繁访问 NBA 官方接口 |  | 缓存过期后可自动重新拉取最新数据","textChars":68,"textLines":5,"bbox":[894,269,281,264]}
+{"kind":"textbox","id":"sh/gr2p8nqx","slide":4,"text":"接口响应","textPreview":"接口响应","textChars":4,"textLines":1,"bbox":[294,575,96,22]}
+{"kind":"textbox","id":"sh/rytsvu9k","slide":4,"text":"清洗聚合","textPreview":"清洗聚合","textChars":4,"textLines":1,"bbox":[596,575,96,22]}
+{"kind":"textbox","id":"sh/yd0z6103","slide":4,"text":"请求加速","textPreview":"请求加速","textChars":4,"textLines":1,"bbox":[988,575,96,22]}
+{"kind":"shape","id":"sh/a9w3m94f","slide":4,"bbox":[390,584,88,2]}
+{"kind":"shape","id":"sh/zupwb2hw","slide":4,"bbox":[798,584,72,2]}
+{"kind":"shape","id":"sh/sfil0rqd","slide":4,"bbox":[72,676,1040,1]}
+{"kind":"textbox","id":"sh/h0fepkzu","slide":4,"text":"Hoop Insight · NBA 篮球数据分析与智能问数系统","textPreview":"Hoop Insight · NBA 篮球数据分析与智能问数系统","textChars":32,"textLines":1,"bbox":[72,685,700,20]}
+{"kind":"textbox","id":"sh/al87ed8b","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1160,681,48,26]}
+{"kind":"notes","id":"nt/ohrlzd","slide":4,"text":""}
+{"kind":"slide","id":"sl/xonvgh","slide":5,"title":"PROJECT HIGHLIGHTS","textShapes":20}
+{"kind":"shape","id":"sh/ovahoza1","slide":5,"bbox":[0,0,1280,720]}
+{"kind":"shape","id":"sh/vahoza1g","slide":5,"bbox":[72,57,30,3]}
+{"kind":"textbox","id":"sh/6tovahoz","slide":5,"text":"PROJECT HIGHLIGHTS","textPreview":"PROJECT HIGHLIGHTS","textChars":18,"textLines":1,"bbox":[114,50,360,22]}
+{"kind":"textbox","id":"sh/d8v6psfi","slide":5,"text":"三个能力把篮球数据从“表格”推进到“洞察”。","textPreview":"三个能力把篮球数据从“表格”推进到“洞察”。","textChars":22,"textLines":1,"bbox":[72,82,900,92]}
+{"kind":"shape","id":"sh/onyd0z61","slide":5,"bbox":[72,190,342,390]}
+{"kind":"textbox","id":"sh/z25kb6xk","slide":5,"text":"01 · SHOT SPACE","textPreview":"01 · SHOT SPACE","textChars":15,"textLines":1,"bbox":[96,212,80,20]}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":5,"text":"投篮空间可视化","textPreview":"投篮空间可视化","textChars":7,"textLines":1,"bbox":[96,240,286,40]}
+{"kind":"shape","id":"sh/d4vmtwra","slide":5,"bbox":[108,308,221.4,188.6]}
+{"kind":"shape","id":"sh/oj2t83it","slide":5,"bbox":[177.7,308,82,63.96]}
+{"kind":"shape","id":"sh/2x4nap4r","slide":5,"bbox":[198.2,349,41,41]}
+{"kind":"shape","id":"sh/vixczed8","slide":5,"bbox":[204.76,334.24,27.88,3.28]}
+{"kind":"shape","id":"sh/k3q5o7qp","slide":5,"bbox":[186.72,380.16,63.96,63.96]}
+{"kind":"shape","id":"sh/donyd0z6","slide":5,"bbox":[137.52,335.88,162.36,162.36]}
+{"kind":"shape","id":"sh/6psfil0r","slide":5,"bbox":[150,348,9,9]}
+{"kind":"shape","id":"sh/val87ed8","slide":5,"bbox":[202,375,9,9]}
+{"kind":"shape","id":"sh/kre1w7mp","slide":5,"bbox":[260,337,9,9]}
+{"kind":"shape","id":"sh/dcbulwva","slide":5,"bbox":[292,442,9,9]}
+{"kind":"shape","id":"sh/2lszqtcj","slide":5,"bbox":[180,480,9,9]}
+{"kind":"shape","id":"sh/v6psfil0","slide":5,"bbox":[276,500,9,9]}
+{"kind":"shape","id":"sh/nuxc3ylc","slide":5,"bbox":[220,422,9,9]}
+{"kind":"textbox","id":"sh/y90je9cv","slide":5,"text":"散点图展示出手位置；热区图和区域效率统计解释球员或球队的出手选择与得分效率。","textPreview":"散点图展示出手位置；热区图和区域效率统计解释球员或球队的出手选择与得分效率。","textChars":38,"textLines":1,"bbox":[98,525,286,44]}
+{"kind":"shape","id":"sh/5wjudg7a","slide":5,"bbox":[469,190,342,390]}
+{"kind":"textbox","id":"sh/gbq1oryt","slide":5,"text":"02 · ASK AI","textPreview":"02 · ASK AI","textChars":11,"textLines":1,"bbox":[493,212,80,20]}
+{"kind":"textbox","id":"sh/n29gr2p8","slide":5,"text":"智能问数助手","textPreview":"智能问数助手","textChars":6,"textLines":1,"bbox":[493,240,286,40]}
+{"kind":"shape","id":"sh/yhgn29gr","slide":5,"bbox":[505,322,260,76]}
+{"kind":"textbox","id":"sh/58z25kb6","slide":5,"text":"“哪支球队近期净效率最高？”","textPreview":"“哪支球队近期净效率最高？”","textChars":14,"textLines":1,"bbox":[526,346,218,24]}
+{"kind":"shape","id":"sh/gn29gr2p","slide":5,"bbox":[535,426,200,70]}
+{"kind":"textbox","id":"sh/neloj2t8","slide":5,"text":"结构化数据上下文\n+\n中文分析回答","textPreview":"结构化数据上下文 | + | 中文分析回答","textChars":17,"textLines":3,"bbox":[558,438,154,44]}
+{"kind":"textbox","id":"sh/ytsvu9kn","slide":5,"text":"自然语言提问，后端基于真实结构化数据组织上下文，支持比赛解读、球员比较、球队分析和报告生成。","textPreview":"自然语言提问，后端基于真实结构化数据组织上下文，支持比赛解读、球员比较、球队分析和报告生成。","textChars":46,"textLines":1,"bbox":[495,525,286,44]}
+{"kind":"shape","id":"sh/4zidonyd","slide":5,"bbox":[866,190,342,390]}
+{"kind":"textbox","id":"sh/xkf6dcbu","slide":5,"text":"03 · DATA OPS","textPreview":"03 · DATA OPS","textChars":13,"textLines":1,"bbox":[890,212,80,20]}
+{"kind":"textbox","id":"sh/mtwra5gb","slide":5,"text":"NBA API 自动化接入","textPreview":"NBA API 自动化接入","textChars":13,"textLines":1,"bbox":[890,240,286,40]}
+{"kind":"shape","id":"sh/fepkzupw","slide":5,"bbox":[925,326,78,46]}
+{"kind":"textbox","id":"sh/4r65wjud","slide":5,"text":"请求","textPreview":"请求","textChars":2,"textLines":1,"bbox":[925,338,78,18]}
+{"kind":"shape","id":"sh/xc3ylc7u","slide":5,"bbox":[1079,326,78,46]}
+{"kind":"textbox","id":"sh/mlkjm1cf","slide":5,"text":"缓存","textPreview":"缓存","textChars":2,"textLines":1,"bbox":[1079,338,78,18]}
+{"kind":"shape","id":"sh/f6dcbulw","slide":5,"bbox":[1079,446,78,46]}
+{"kind":"textbox","id":"sh/4fu18jqh","slide":5,"text":"处理","textPreview":"处理","textChars":2,"textLines":1,"bbox":[1079,458,78,18]}
+{"kind":"shape","id":"sh/x0nuxc3y","slide":5,"bbox":[925,446,78,46]}
+{"kind":"textbox","id":"sh/pwb2hwfy","slide":5,"text":"展示","textPreview":"展示","textChars":2,"textLines":1,"bbox":[925,458,78,18]}
+{"kind":"textbox","id":"sh/0bi9s36h","slide":5,"text":"↻","textPreview":"↻","textChars":1,"textLines":1,"bbox":[1014,374,46,46]}
+{"kind":"textbox","id":"sh/7qpg3ex0","slide":5,"text":"按赛季、球队、球员或比赛 ID 自动请求；缓存过期后重新拉取，支持实时 / 准实时更新。","textPreview":"按赛季、球队、球员或比赛 ID 自动请求；缓存过期后重新拉取，支持实时 / 准实时更新。","textChars":44,"textLines":1,"bbox":[892,525,286,44]}
+{"kind":"shape","id":"sh/i5sneloj","slide":5,"bbox":[72,676,1040,1]}
+{"kind":"textbox","id":"sh/p4r65wju","slide":5,"text":"Hoop Insight · NBA 篮球数据分析与智能问数系统","textPreview":"Hoop Insight · NBA 篮球数据分析与智能问数系统","textChars":32,"textLines":1,"bbox":[72,685,700,20]}
+{"kind":"textbox","id":"sh/wjudg7ad","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1160,681,48,26]}
+{"kind":"notes","id":"nt/xonvgh","slide":5,"text":""}
+{"kind":"slide","id":"sl/7u1vsb","slide":6,"title":"THANK YOU","textShapes":9}
+{"kind":"shape","id":"sh/sji5snel","slide":6,"bbox":[0,0,1280,720]}
+{"kind":"shape","id":"sh/3ylc7u54","slide":6,"bbox":[0,0,1280,720]}
+{"kind":"shape","id":"sh/adsji5sn","slide":6,"bbox":[815,90,337.5,287.5]}
+{"kind":"shape","id":"sh/lszqtcj6","slide":6,"bbox":[921.25,90,125,97.5]}
+{"kind":"shape","id":"sh/s72x4nap","slide":6,"bbox":[952.5,152.5,62.5,62.5]}
+{"kind":"shape","id":"sh/3m94fu18","slide":6,"bbox":[962.5,130,42.5,5]}
+{"kind":"shape","id":"sh/a5gbq1or","slide":6,"bbox":[935,200,97.5,97.5]}
+{"kind":"shape","id":"sh/hoza1gvy","slide":6,"bbox":[860,132.5,247.5,247.5]}
+{"kind":"shape","id":"sh/s36hcrmh","slide":6,"bbox":[820,430,6,6]}
+{"kind":"shape","id":"sh/q1orytsv","slide":6,"bbox":[882,430,6,6]}
+{"kind":"shape","id":"sh/fmlkjm1c","slide":6,"bbox":[944,430,6,6]}
+{"kind":"shape","id":"sh/87ed8bat","slide":6,"bbox":[1006,430,6,6]}
+{"kind":"shape","id":"sh/xs72x4na","slide":6,"bbox":[1068,430,6,6]}
+{"kind":"shape","id":"sh/qtcj6tov","slide":6,"bbox":[1130,430,6,6]}
+{"kind":"shape","id":"sh/je9cvixc","slide":6,"bbox":[820,472,6,6]}
+{"kind":"shape","id":"sh/8z25kb6x","slide":6,"bbox":[882,472,6,6]}
+{"kind":"shape","id":"sh/1gvy90je","slide":6,"bbox":[944,472,6,6]}
+{"kind":"shape","id":"sh/qpg3ex0n","slide":6,"bbox":[1006,472,6,6]}
+{"kind":"shape","id":"sh/fa9w3m94","slide":6,"bbox":[1068,472,6,6]}
+{"kind":"shape","id":"sh/re1w7mp0","slide":6,"bbox":[1130,472,6,6]}
+{"kind":"shape","id":"sh/2t83itgf","slide":6,"bbox":[820,514,6,6]}
+{"kind":"shape","id":"sh/9knih4by","slide":6,"bbox":[882,514,6,6]}
+{"kind":"shape","id":"sh/kzupwb2h","slide":6,"bbox":[944,514,6,6]}
+{"kind":"shape","id":"sh/rqd4vmtw","slide":6,"bbox":[1006,514,6,6]}
+{"kind":"shape","id":"sh/25kb6xkf","slide":6,"bbox":[1068,514,6,6]}
+{"kind":"shape","id":"sh/9w3m94fu","slide":6,"bbox":[1130,514,6,6]}
+{"kind":"shape","id":"sh/kb6xkf6d","slide":6,"bbox":[74,94,160,30]}
+{"kind":"textbox","id":"sh/r2p8nqxs","slide":6,"text":"THANK YOU","textPreview":"THANK YOU","textChars":9,"textLines":1,"bbox":[86,99,136,20]}
+{"kind":"textbox","id":"sh/2hwfyxob","slide":6,"text":"谢谢观看！","textPreview":"谢谢观看！","textChars":5,"textLines":1,"bbox":[72,174,560,86]}
+{"kind":"textbox","id":"sh/8nqxs72x","slide":6,"text":"欢迎老师和同学批评指正。","textPreview":"欢迎老师和同学批评指正。","textChars":12,"textLines":1,"bbox":[76,280,520,42]}
+{"kind":"shape","id":"sh/18jqh0fe","slide":6,"bbox":[76,390,620,108]}
+{"kind":"textbox","id":"sh/qh0fepkz","slide":6,"text":"Hoop Insight 将 NBA 官方数据接口、本地数据处理、FastAPI 在线服务、React 可视化和 AI 问数串成一条完整的数据分析链路。","textPreview":"Hoop Insight 将 NBA 官方数据接口、本地数据处理、FastAPI 在线服务、React 可视化和 AI 问数串成一条完整的数据分析链路。","textChars":76,"textLines":1,"bbox":[108,420,556,48]}
+{"kind":"shape","id":"sh/j2t83itg","slide":6,"bbox":[82,552,120,36]}
+{"kind":"textbox","id":"sh/8bat47y1","slide":6,"text":"数据接入","textPreview":"数据接入","textChars":4,"textLines":1,"bbox":[82,561,120,18]}
+{"kind":"shape","id":"sh/1w7mp0bi","slide":6,"bbox":[227,552,120,36]}
+{"kind":"textbox","id":"sh/q5o7qpg3","slide":6,"text":"分析计算","textPreview":"分析计算","textChars":4,"textLines":1,"bbox":[227,561,120,18]}
+{"kind":"shape","id":"sh/jqh0fepk","slide":6,"bbox":[372,552,120,36]}
+{"kind":"textbox","id":"sh/c3ylc7u5","slide":6,"text":"可视化展示","textPreview":"可视化展示","textChars":5,"textLines":1,"bbox":[372,561,120,18]}
+{"kind":"shape","id":"sh/1kre1w7m","slide":6,"bbox":[517,552,120,36]}
+{"kind":"textbox","id":"sh/tgfmlkjm","slide":6,"text":"智能问数","textPreview":"智能问数","textChars":4,"textLines":1,"bbox":[517,561,120,18]}
+{"kind":"textbox","id":"sh/4vmtwra5","slide":6,"text":"吕品正","textPreview":"吕品正","textChars":3,"textLines":1,"bbox":[76,638,160,28]}
+{"kind":"notes","id":"nt/7u1vsb","slide":6,"text":""}

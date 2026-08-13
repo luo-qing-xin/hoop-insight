@@ -1,10 +1,16 @@
+import type { ReactNode } from "react";
+
 type StatCardProps = {
   label: string;
-  value: string;
+  value: ReactNode;
   trend?: string;
   description?: string;
+  tooltip?: string;
   tone?: "blue" | "violet" | "green" | "amber";
   icon?: "trend" | "shield" | "pulse" | "timer";
+  className?: string;
+  valueClassName?: string;
+  valueTitle?: string;
 };
 
 function StatIcon({ icon = "trend" }: { icon?: StatCardProps["icon"] }) {
@@ -55,15 +61,38 @@ function StatIcon({ icon = "trend" }: { icon?: StatCardProps["icon"] }) {
   }
 }
 
-export default function StatCard({ label, value, trend, description, tone = "blue", icon = "trend" }: StatCardProps) {
+export default function StatCard({
+  label,
+  value,
+  trend,
+  description,
+  tooltip,
+  tone = "blue",
+  icon = "trend",
+  className,
+  valueClassName,
+  valueTitle,
+}: StatCardProps) {
   return (
-    <article className={`stat-card stat-card-${tone}`}>
+    <article className={`stat-card stat-card-${tone}${className ? ` ${className}` : ""}`}>
       <div className="stat-icon">
         <StatIcon icon={icon} />
       </div>
       <div className="stat-card-copy">
-        <p>{label}</p>
-        <strong>{value}</strong>
+        <div className="stat-card-label">
+          <p>{label}</p>
+          {tooltip ? (
+            <span className="stat-info-tooltip" tabIndex={0} aria-label={`${label} 指标解释`}>
+              ?
+              <span className="stat-info-tooltip-panel" role="tooltip">
+                {tooltip}
+              </span>
+            </span>
+          ) : null}
+        </div>
+        <strong className={valueClassName} title={valueTitle}>
+          {value}
+        </strong>
         <span>{description ?? trend}</span>
       </div>
     </article>

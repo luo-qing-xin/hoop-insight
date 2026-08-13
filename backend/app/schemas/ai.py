@@ -17,6 +17,7 @@ class AskAIResponse(BaseModel):
     entities: dict[str, Any] = Field(default_factory=dict)
     need_data: list[str] = Field(default_factory=list)
     data: Any | None = None
+    analysis: Any | None = None
     debug: dict[str, Any] = Field(default_factory=dict)
 
 

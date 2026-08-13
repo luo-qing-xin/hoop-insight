@@ -13,6 +13,7 @@ import pandas as pd
 
 from app.services import game_service, nba_client, player_service, shot_service, team_service
 from app.services.ai_service import UNCONFIGURED_MESSAGE, answer_question, chat
+from app.services.qa_analysis_engine import build_qa_analysis
 from app.utils.data_storage import load_dataframe, save_dataframe
 
 
@@ -30,7 +31,14 @@ INTENTS = {
     "team_ranking_query",
     "player_ranking_query",
     "recent_games_analysis",
+    "recent_games_query",
     "report_generation",
+    "focus_game_report",
+    "player_stability",
+    "player_comparison",
+    "team_efficiency",
+    "recent_games_summary",
+    "shot_analysis",
     "unknown",
 }
 
@@ -232,18 +240,74 @@ def _rule_classify(question: str) -> dict[str, Any] | None:
     metric_key = _detect_metric(text)
     asks_rank = any(word in text for word in ("最高", "最好", "最多", "最低", "最少", "排名", "第一", "哪支", "哪位", "谁"))
 
-    if any(word in text for word in ("报告", "分析报告", "复盘")) and any(word in text for word in ("生成", "今日", "最近", "焦点", "比赛")):
+    time_terms = ("昨天", "昨日", "今日", "今天", "最近一场", "近三场", "recent")
+    report_terms = ("报告", "分析", "复盘", "战报", "赛后分析", "recap", "report")
+    game_terms = ("比赛", "焦点比赛", "对阵", "game")
+    explicit_report_terms = ("今日焦点", "昨日焦点", "比赛分析报告", "比赛复盘", "焦点比赛", "赛后分析", "recent game report")
+    if any(term in text.lower() for term in explicit_report_terms) or (
+        any(term in text for term in time_terms)
+        and any(term in text for term in report_terms)
+        and any(term in text for term in game_terms)
+    ):
         return _normalize_classification(
-            {"intent": "report_generation", "entities": _empty_entities(), "need_data": ["today_games", "recent_games"]}
+            {"intent": "focus_game_report", "entities": _empty_entities(), "need_data": ["recent_games", "box_scores", "game_flow"]}
         )
 
-    if "最近" in text and "比赛" in text and any(word in text for word in ("稳定", "状态", "表现")):
+    if any(word in text for word in ("报告", "分析报告", "复盘", "比赛总结")) and any(word in text for word in ("生成", "今日", "最近", "焦点", "比赛")):
+        return _normalize_classification(
+            {"intent": "recent_games_summary", "entities": _empty_entities(), "need_data": ["recent_games", "box_scores", "game_flow"]}
+        )
+
+    if any(word in text for word in ("稳定", "波动", "起伏")) and any(word in text for word in ("得分", "球员", "谁", "哪位", "表现")):
         return _normalize_classification(
             {
-                "intent": "recent_games_analysis",
+                "intent": "player_stability",
                 "entities": _empty_entities(),
                 "need_data": ["recent_games", "box_scores"],
                 "metric_key": metric_key or "points",
+            }
+        )
+
+    asks_recent_game_list = (
+        ("比赛" in text and any(word in text for word in ("最近", "最新")))
+        and (
+            any(word in text for word in ("哪些", "哪几", "有哪些", "列表", "展示", "是哪", "是什么"))
+            or re.search(r"最近\s*(\d+|[一二两三四五六七八九十几])?\s*场比赛\s*$", text) is not None
+        )
+        and not any(word in text for word in ("表现如何", "表现怎么样", "稳定", "得分表现", "分析报告", "复盘", "总结"))
+    )
+    if asks_recent_game_list:
+        return _normalize_classification(
+            {"intent": "recent_games_query", "entities": _empty_entities(), "need_data": ["recent_games", "league_game_log"]}
+        )
+
+    if any(word in text for word in ("热区", "投篮区域", "高效区域", "出手区域")) or ("投篮" in text and "特点" in text):
+        return _normalize_classification(
+            {
+                "intent": "shot_analysis",
+                "entities": _empty_entities(),
+                "need_data": ["shots", "shot_chart"],
+                "metric_key": metric_key,
+            }
+        )
+
+    if any(word in text for word in ("谁更强", "对比", "比较", "相比", "表现如何")):
+        return _normalize_classification(
+            {
+                "intent": "player_comparison",
+                "entities": _empty_entities(),
+                "need_data": ["players_base", "players_advanced"],
+                "metric_key": metric_key,
+            }
+        )
+
+    if any(word in text for word in ("球队整体", "进攻效率", "防守怎么样", "防守效率", "净胜分")):
+        return _normalize_classification(
+            {
+                "intent": "team_efficiency",
+                "entities": _empty_entities(),
+                "need_data": ["team_analysis", "team_stats", "teams_advanced", "teams_opponent"],
+                "metric_key": metric_key,
             }
         )
 
@@ -284,9 +348,10 @@ def classify_question(question: str) -> dict[str, Any]:
                 "你是篮球数据查询意图分类器。只输出严格 JSON，不要输出 Markdown、解释或多余文本。"
                 "intent 只能是 team_detail_query、player_detail_query、game_detail_query、shot_query、"
                 "comparison_query、team_ranking_query、player_ranking_query、recent_games_analysis、"
-                "report_generation、unknown。"
+                "report_generation、focus_game_report、player_stability、player_comparison、team_efficiency、recent_games_summary、"
+                "recent_games_query、shot_analysis、unknown。"
                 "entities 只能包含 player_name、team_name、game_id、season。"
-                "全局排名类问题不需要填具体球队或球员。报告生成问题不强制要求 game_id。"
+                "全局排名类和最近比赛列表类问题不需要填具体球队或球员。报告生成问题不强制要求 game_id。"
                 "不确定的实体必须填 null，不要猜测。"
             ),
         },
@@ -723,7 +788,7 @@ def query_structured_data(classification: dict[str, Any], question: str = "", de
         return _player_ranking_query(classification, season, debug)
     if intent == "recent_games_analysis":
         return _recent_games_analysis(question, season, debug)
-    if intent == "report_generation":
+    if intent in {"report_generation", "focus_game_report"}:
         return _report_generation(season, debug)
     if intent in {"player_query", "player_detail_query"}:
         debug["data_tables"].append("player_advanced_stats")
@@ -775,6 +840,24 @@ def _persist_ai_question(question: str, result: dict[str, Any]) -> None:
 def ask_question(question: str) -> dict[str, Any]:
     classification = classify_question(question)
     debug = _build_debug(question, classification)
+    analysis_result = build_qa_analysis(question, classification)
+    if analysis_result is not None:
+        debug["data_tables"].extend(analysis_result.get("need_data") or [])
+        debug["fallback"] = bool(analysis_result.get("fallback"))
+        debug["analysis_engine"] = True
+        result = {
+            "answer": analysis_result["answer"],
+            "confidence": analysis_result.get("confidence", "deterministic+local"),
+            "intent": analysis_result["intent"],
+            "entities": classification["entities"],
+            "need_data": analysis_result.get("need_data") or classification["need_data"],
+            "data": _jsonable(analysis_result.get("data")),
+            "analysis": _jsonable(analysis_result.get("analysis")),
+            "debug": debug,
+        }
+        _persist_ai_question(question, result)
+        return result
+
     structured_data = query_structured_data(classification, question=question, debug=debug)
 
     if isinstance(structured_data, dict) and "answer" in structured_data:

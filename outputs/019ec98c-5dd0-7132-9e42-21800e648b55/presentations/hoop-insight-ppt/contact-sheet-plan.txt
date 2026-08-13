@@ -1,0 +1,6 @@
+1. Cover with half-court visual and metric rail.
+2. Three-layer architecture flow with module details.
+3. Hub-and-spoke NBA API capability map.
+4. Three-directory data storage map with processing notes.
+5. Feature demonstration triptych with mini visual proofs.
+6. Minimal closing slide with final summary band.

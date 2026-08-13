@@ -2,47 +2,58 @@ export const APP_COPY = {
   brand: "Hoop Insight",
   brandSubtitle: "篮球智能分析平台",
   eyebrow: "Hoop Insight",
-  export: "导出",
-  newReport: "新建报告",
   liveModelLabel: "实时数据源",
   liveApiTitle: "FastAPI 实时接入",
   liveApiDescription: "后端可用时，页面会直接读取最新接口数据；离线演示时可切换本地 Demo 数据。",
   liveApiStatus: "连接正常",
 };
 
-export const PAGE_COPY: Record<string, { title: string; description: string }> = {
+export type PageCopy = {
+  title: string;
+  eyebrow?: string;
+  description: string;
+};
+
+export const PAGE_COPY: Record<string, PageCopy> = {
   "/": {
     title: "数据总览",
+    eyebrow: "DATA OVERVIEW",
     description:
       "Hoop Insight 将比赛结果、球队效率、球员表现与投篮空间数据整合到统一分析视图中，帮助快速识别联盟趋势、球队差异与关键表现波动。",
   },
   "/games": {
     title: "近期比赛",
+    eyebrow: "RECENT GAMES",
     description: "聚合近期赛程、比分状态与焦点对阵，快速进入单场复盘。",
   },
   "/players": {
     title: "球员分析",
+    eyebrow: "PLAYER ANALYSIS",
     description: "从基础数据、高级指标与能力结构理解球员表现。",
   },
   "/teams": {
     title: "球队分析",
+    eyebrow: "TEAM ANALYSIS",
     description: "从进攻效率、防守效率、比赛节奏和净效率理解球队竞争力。",
   },
   "/shots": {
     title: "投篮分析",
+    eyebrow: "SHOOTING ANALYSIS",
     description: "结合出手位置、区域效率和命中转化识别投篮结构。",
   },
   "/data-center": {
     title: "数据中心",
+    eyebrow: "DATA CENTER",
     description: "查看、筛选、下载已保存到本地的数据集，供榜单、球队分析、投篮热区和 AI 问数复用。",
   },
   "/ask-ai": {
     title: "智能问数",
+    eyebrow: "AI Q&A",
     description: "用自然语言探索比赛、球员与球队表现。",
   },
 };
 
-export const GAME_DETAIL_COPY = {
+export const GAME_DETAIL_COPY: PageCopy = {
   title: "比赛复盘",
   description: "拆解比分走势、关键节点、球队对比和高影响力球员表现。",
 };
@@ -91,9 +102,10 @@ export const AI_COPY = {
   dataTypeAria: "本次回答使用的数据类型",
   exampleAria: "示例问题",
   examples: [
+    "最近三场比赛是哪些",
     "最近三场比赛中，哪位球员得分表现最稳定？",
     "哪支球队的进攻效率最高？",
-    "某位球员的投篮热区有什么特点？",
+    "库里的投篮热区有什么特点？",
     "请生成一份今日焦点比赛分析报告。",
   ],
 };
@@ -102,6 +114,13 @@ export const DATA_TYPE_LABELS: Record<string, string> = {
   game: "比赛数据",
   games: "比赛数据",
   game_query: "比赛数据",
+  focus_game_report: "焦点比赛报告",
+  daily_focus_report: "焦点比赛报告",
+  game_recap_report: "比赛复盘",
+  recent_games: "近期比赛",
+  league_game_log: "比赛日志",
+  recent_games_query: "最近比赛列表",
+  recent_games_summary: "近期比赛总结",
   player: "球员数据",
   players: "球员数据",
   player_query: "球员数据",

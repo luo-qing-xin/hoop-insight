@@ -1,0 +1,44 @@
+{
+  "output": "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/output/hoop-insight-nba-analytics-ai.pptx",
+  "outputBytes": 39345,
+  "slideCount": 6,
+  "slideSize": {
+    "width": 1280,
+    "height": 720
+  },
+  "previews": [
+    "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/preview/slide-01.png",
+    "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/preview/slide-02.png",
+    "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/preview/slide-03.png",
+    "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/preview/slide-04.png",
+    "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/preview/slide-05.png",
+    "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/preview/slide-06.png"
+  ],
+  "montage": "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/preview/deck-montage.webp",
+  "slides": [
+    {
+      "modulePath": "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/slides/slide-01.mjs",
+      "exportName": "slide01"
+    },
+    {
+      "modulePath": "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/slides/slide-02.mjs",
+      "exportName": "slide02"
+    },
+    {
+      "modulePath": "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/slides/slide-03.mjs",
+      "exportName": "slide03"
+    },
+    {
+      "modulePath": "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/slides/slide-04.mjs",
+      "exportName": "slide04"
+    },
+    {
+      "modulePath": "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/slides/slide-05.mjs",
+      "exportName": "slide05"
+    },
+    {
+      "modulePath": "/Users/yunye/Desktop/hoop-insight/outputs/019ec98c-5dd0-7132-9e42-21800e648b55/presentations/hoop-insight-ppt/slides/slide-06.mjs",
+      "exportName": "slide06"
+    }
+  ]
+}

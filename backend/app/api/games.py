@@ -1,7 +1,14 @@
 from fastapi import APIRouter, Query
 
-from app.schemas.game import FocusGamesResponse, GameReviewResponse, RecentGamesResponse, TodayGamesResponse
-from app.services.game_service import get_focus_games, get_game_review, get_recent_games, get_today_games
+from app.schemas.game import (
+    FocusGamesResponse,
+    GameAIReportRequest,
+    GameAIReportResponse,
+    GameReviewResponse,
+    RecentGamesResponse,
+    TodayGamesResponse,
+)
+from app.services.game_service import get_focus_games, get_game_ai_report, get_game_review, get_recent_games, get_today_games
 
 
 router = APIRouter(prefix="/api/games", tags=["games"])
@@ -28,3 +35,9 @@ def focus_games() -> FocusGamesResponse:
 @router.get("/{game_id}/review", response_model=GameReviewResponse)
 def game_review(game_id: str) -> GameReviewResponse:
     return get_game_review(game_id)
+
+
+@router.post("/{game_id}/ai-report", response_model=GameAIReportResponse)
+def game_ai_report(game_id: str, payload: GameAIReportRequest | None = None) -> GameAIReportResponse:
+    force_refresh = payload.force_refresh if payload is not None else False
+    return get_game_ai_report(game_id, force_refresh=force_refresh)

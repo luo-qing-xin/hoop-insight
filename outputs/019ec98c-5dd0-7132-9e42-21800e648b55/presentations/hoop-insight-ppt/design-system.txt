@@ -1,0 +1,19 @@
+slide size: 1280x720
+background: deep ink (#0B1020) with warm paper sections (#F6F0E4) used for contrast pages.
+typography: PingFang SC / Heiti SC for Chinese, Aptos fallback. Large claims 34-54px, body 18-25px, labels 12-16px.
+palette:
+- base ink #0B1020
+- surface ink #121A2D
+- warm paper #F6F0E4
+- court amber #F59E0B
+- court teal #22C7A9
+- signal red #EF4444
+- muted text #94A3B8
+chart grammar: direct labels, minimal gridlines, high-contrast marks, no heavy legends.
+diagram grammar: left-to-right data flow and hub-and-spoke API maps; arrows only where direction matters.
+container grammar: use containment only for lanes, modules, and directories. No decorative card nesting.
+footer grammar: small source note and slide number on every non-cover page.
+title/kicker grammar: all-caps English/Chinese kicker above a conclusion-style Chinese title.
+brand asset policy: no official NBA marks or team identities; generic basketball court lines and data marks only.
+layout families: cover, architecture flow, interface map, data directory map, feature demonstration triptych, closing statement.
+banned motifs: fake logos, decorative blobs, generic SaaS card grids, one-note blue/purple palette.

@@ -62,6 +62,15 @@ SUPPORTED_LEADERBOARD_STATS = {
     "PLUS_MINUS",
 }
 
+BASE_PER_GAME_FIELDS = {
+    "MIN": "MPG",
+    "PTS": "PPG",
+    "REB": "RPG",
+    "AST": "APG",
+    "STL": "SPG",
+    "BLK": "BPG",
+}
+
 
 def _is_error_payload(data: Any) -> bool:
     return isinstance(data, dict) and data.get("ok") is False
@@ -95,6 +104,34 @@ def _round_float(value: float | None) -> float | None:
     if value is None:
         return None
     return round(value, 3)
+
+
+def _per_game(total: Any, gp: Any) -> float | None:
+    total_value = _safe_float(total)
+    gp_value = _safe_int(gp)
+    if total_value is None or gp_value is None or gp_value <= 0:
+        return None
+    return total_value / gp_value
+
+
+def _series_per_game(total: pd.Series, gp: pd.Series) -> pd.Series:
+    numeric_total = pd.to_numeric(total, errors="coerce")
+    numeric_gp = pd.to_numeric(gp, errors="coerce")
+    valid_gp = numeric_gp.where(numeric_gp > 0)
+    return numeric_total / valid_gp
+
+
+def _add_base_per_game_columns(rows: pd.DataFrame) -> pd.DataFrame:
+    result = rows.copy()
+    if "GP" not in result.columns:
+        return result
+
+    result["GP"] = pd.to_numeric(result["GP"], errors="coerce")
+    for total_column, per_game_column in BASE_PER_GAME_FIELDS.items():
+        if total_column in result.columns:
+            result[total_column] = pd.to_numeric(result[total_column], errors="coerce")
+            result[per_game_column] = _series_per_game(result[total_column], result["GP"])
+    return result
 
 
 def _metric_comparison(row: pd.Series, rows: pd.DataFrame, metric: str) -> PlayerMetricComparison:
@@ -147,6 +184,27 @@ def _advanced_player_from_row(row: pd.Series, rows: pd.DataFrame) -> PlayerAdvan
 
 
 def _player_from_row(rank: int, row: pd.Series) -> PlayerLeaderboardEntry:
+    gp = _safe_int(row.get("GP"))
+    mpg = _safe_float(row.get("MPG"))
+    ppg = _safe_float(row.get("PPG"))
+    rpg = _safe_float(row.get("RPG"))
+    apg = _safe_float(row.get("APG"))
+    spg = _safe_float(row.get("SPG"))
+    bpg = _safe_float(row.get("BPG"))
+
+    if mpg is None:
+        mpg = _per_game(row.get("MIN"), gp)
+    if ppg is None:
+        ppg = _per_game(row.get("PTS"), gp)
+    if rpg is None:
+        rpg = _per_game(row.get("REB"), gp)
+    if apg is None:
+        apg = _per_game(row.get("AST"), gp)
+    if spg is None:
+        spg = _per_game(row.get("STL"), gp)
+    if bpg is None:
+        bpg = _per_game(row.get("BLK"), gp)
+
     return PlayerLeaderboardEntry(
         rank=rank,
         player_id=_safe_int(row.get("PLAYER_ID")),
@@ -154,13 +212,23 @@ def _player_from_row(rank: int, row: pd.Series) -> PlayerLeaderboardEntry:
         team_id=_safe_int(row.get("TEAM_ID")),
         team_abbr=row.get("TEAM_ABBREVIATION"),
         age=_safe_float(row.get("AGE")),
-        gp=_safe_int(row.get("GP")),
-        min=_safe_float(row.get("MIN")),
-        pts=_safe_float(row.get("PTS")),
-        reb=_safe_float(row.get("REB")),
-        ast=_safe_float(row.get("AST")),
-        stl=_safe_float(row.get("STL")),
-        blk=_safe_float(row.get("BLK")),
+        gp=gp,
+        mpg=_round_float(mpg),
+        min=_round_float(mpg),
+        total_min=_round_float(_safe_float(row.get("MIN"))),
+        ppg=_round_float(ppg),
+        pts=_round_float(ppg),
+        total_pts=_round_float(_safe_float(row.get("PTS"))),
+        rpg=_round_float(rpg),
+        reb=_round_float(rpg),
+        total_reb=_round_float(_safe_float(row.get("REB"))),
+        apg=_round_float(apg),
+        ast=_round_float(apg),
+        total_ast=_round_float(_safe_float(row.get("AST"))),
+        spg=_round_float(spg),
+        stl=_round_float(spg),
+        bpg=_round_float(bpg),
+        blk=_round_float(bpg),
         fg_pct=_safe_float(row.get("FG_PCT")),
         fg3_pct=_safe_float(row.get("FG3_PCT")),
         ft_pct=_safe_float(row.get("FT_PCT")),
@@ -195,7 +263,7 @@ def get_player_leaderboard(
 
     min_gp = max(0, min_gp)
     min_min = max(0.0, min_min)
-    rows = player_stats.copy()
+    rows = _add_base_per_game_columns(player_stats)
 
     for column in {"GP", "MIN", normalized_stat}:
         if column not in rows.columns:
@@ -209,14 +277,18 @@ def get_player_leaderboard(
             )
         rows[column] = pd.to_numeric(rows[column], errors="coerce")
 
-    rows = rows[(rows["GP"] >= min_gp) & (rows["MIN"] >= min_min)]
+    sort_column = BASE_PER_GAME_FIELDS.get(normalized_stat, normalized_stat)
+    if sort_column not in rows.columns:
+        rows[sort_column] = pd.to_numeric(rows[normalized_stat], errors="coerce")
+
+    rows = rows[(rows["GP"] >= min_gp) & (rows["MPG"] >= min_min)]
     normalized_team = team_abbr.upper() if team_abbr else None
     if normalized_team:
         rows = rows[rows["TEAM_ABBREVIATION"].astype(str).str.upper() == normalized_team]
 
-    rows = rows.dropna(subset=[normalized_stat])
+    rows = rows.dropna(subset=[sort_column])
     rows = rows.sort_values(
-        by=[normalized_stat, "PLAYER_NAME"],
+        by=[sort_column, "PLAYER_NAME"],
         ascending=[False, True],
         kind="mergesort",
     )
@@ -319,6 +391,11 @@ def _merge_player_radar_stats(base_stats: pd.DataFrame, advanced_stats: pd.DataF
     if base_rows.empty or advanced_rows.empty or "PLAYER_ID" not in base_rows.columns or "PLAYER_ID" not in advanced_rows.columns:
         return pd.DataFrame()
 
+    base_rows = _add_base_per_game_columns(base_rows)
+    for total_column, per_game_column in BASE_PER_GAME_FIELDS.items():
+        if total_column in base_rows.columns and per_game_column in base_rows.columns:
+            base_rows[total_column] = base_rows[per_game_column]
+
     merged = base_rows.merge(
         advanced_rows,
         on="PLAYER_ID",
@@ -329,7 +406,10 @@ def _merge_player_radar_stats(base_stats: pd.DataFrame, advanced_stats: pd.DataF
         advanced_column = f"{column}_ADV"
         if advanced_column in merged.columns:
             if column in merged.columns:
-                merged[column] = merged[column].combine_first(merged[advanced_column])
+                if column == "MIN":
+                    merged[column] = merged[advanced_column].combine_first(merged[column])
+                else:
+                    merged[column] = merged[column].combine_first(merged[advanced_column])
             else:
                 merged[column] = merged[advanced_column]
             merged = merged.drop(columns=[advanced_column])

@@ -1,0 +1,6 @@
+No source or reference deck was supplied. Deck is built from the outline and local project context.
+
+Visual target:
+- Technical project defense deck.
+- Dense enough for course presentation, but diagram-led rather than copied outline text.
+- 6-slide structure preserved exactly from the user outline.
